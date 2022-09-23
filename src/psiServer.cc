@@ -23,10 +23,8 @@
 #include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
-#include "src/proto/helloworld.grpc.pb.h"
 #include "src/proto/ot.grpc.pb.h"
 #else
-#include "src/proto/helloworld.grpc.pb.h"
 #include "src/proto/ot.grpc.pb.h"
 #endif
 
@@ -34,30 +32,11 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-using helloworld::HelloRequest;
-using helloworld::HelloReply;
-using helloworld::Greeter;
 using ot::Psi;
 using ot::Point;
 
 
 // Logic and data behind the server's behavior.
-class GreeterServiceImpl final : public Greeter::Service {
-  Status SayHello(ServerContext* context, const HelloRequest* request,
-                  HelloReply* reply) override {
-    std::string prefix("Hello ");
-    reply->set_message(prefix + request->name());
-    return Status::OK;
-  }
-
-  Status SayHelloAgain(ServerContext* context, const HelloRequest* request,
-                       HelloReply* reply) override {
-    std::string prefix("Hello again ");
-    reply->set_message(prefix + request->name());
-    return Status::OK;
-  }
-};
-
 class PsiServiceImpl final : public Psi::Service {
   Status SendPoint(ServerContext* context, const Point* request,
                   Point* reply) override {
@@ -71,7 +50,6 @@ void RunServer() {
   std::string address = "0.0.0.0";
   std::string port = "50051";
   std::string server_address = address + ":" + port;
-  GreeterServiceImpl serviceHello;
   PsiServiceImpl servicePsi;
 
   ServerBuilder builder;
@@ -79,7 +57,6 @@ void RunServer() {
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   // Register "service" as the instance through which we'll communicate with
   // clients. In this case it corresponds to an *synchronous* service.
-  builder.RegisterService(&serviceHello);
   builder.RegisterService(&servicePsi);
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
