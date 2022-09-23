@@ -2449,7 +2449,7 @@ void KDF(unsigned char *data, unsigned int data_len, unsigned int key_len, unsig
 非0--error code
 ***************************************************/
 int EccMakeKey(unsigned char *sk, unsigned int sk_len,
-    unsigned char *pk, unsigned int pk_len, int type)
+    unsigned char *pk, unsigned int *pk_len, int type)
 {
     int i, j;
     unsigned int prikey[DIG_LEN] = { 0 };
@@ -2492,7 +2492,7 @@ int EccMakeKey(unsigned char *sk, unsigned int sk_len,
         pk[j + 3 + 4 * DIG_LEN] = (unsigned char)((pubkey.y[DIG_LEN - 1 - i]) & 0xff);
     }
 
-    //*pk_len = 8 * DIG_LEN;
+    *pk_len = 8 * DIG_LEN;
 
     return(0);
 }
@@ -2577,7 +2577,7 @@ int EccSign(const unsigned char *hash, unsigned int hash_len,
     {
         return(-1);
     }
-    std::cout << "test1" << std::endl;
+    
     x = compare(rand, (small*)N);
     if (x == 1)
     {
@@ -2591,7 +2591,6 @@ int EccSign(const unsigned char *hash, unsigned int hash_len,
     }
 
     basepointmul(&kg, rand);
-    std::cout << "test2" << std::endl;
 
     for (i = 0; i<DIG_LEN; i++)
     {
@@ -2647,9 +2646,8 @@ int EccSign(const unsigned char *hash, unsigned int hash_len,
         sign[j + 2 + 4 * DIG_LEN] = (unsigned char)((s[DIG_LEN - 1 - i] >> 8) & 0xff);
         sign[j + 3 + 4 * DIG_LEN] = (unsigned char)((s[DIG_LEN - 1 - i]) & 0xff);
     }
-    std::cout << "test3" << std::endl;
 
-    // *sign_len = 8 * DIG_LEN;
+    *sign_len = 8 * DIG_LEN;
 
     return(0);
 }

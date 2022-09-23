@@ -77,7 +77,7 @@ void KDF(unsigned char *data, unsigned int data_len, unsigned int key_len, unsig
 非0--error code
 ***************************************************/
 int EccMakeKey(unsigned char *sk, unsigned int sk_len,
-    unsigned char *pk, unsigned int pk_len, int type);
+    unsigned char *pk, unsigned int *pk_len, int type);
 
 /***************************************************
 * function          	: EccSign
