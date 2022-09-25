@@ -27,6 +27,7 @@
 #else
 #include "src/proto/ot.grpc.pb.h"
 #endif
+#include "psiSender.h"
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -34,7 +35,9 @@ using grpc::Status;
 using grpc::ClientReaderWriter;
 using ot::Psi;
 using ot::Point;
+using namespace PSI;
 
+int debug = 1;
 
 class PsiClient {
  public:
@@ -49,27 +52,31 @@ class PsiClient {
     // the server and/or tweak certain RPC behaviors.
     ClientContext context;
 
-    std::shared_ptr<ClientReaderWriter<Point, Point> > stream(
-        stub_->SendPoint(&context));
+    std::shared_ptr<ClientReaderWriter<Point, Point> > stream(stub_->SendPoint(&context));
 
-    // Data we are sending to the server.
-    Point request;
-    request.set_pointset(user);
+    int psiRes = PsiSend(stream);
 
-    // Container for the data we expect from the server.
-    Point reply;
+    if (debug == 1) { // test conn
+      // Data we are sending to the server.
+      Point request;
+      request.set_pointset(user);
 
-    // The actual RPC.
-    bool res = stream->Write(request);
-    Point got;
+      // Container for the data we expect from the server.
+      Point reply;
 
-    stream->Read(&got);
-    std::cout << "client got " << got.pointset() <<std::endl;
+      // The actual RPC.
+      bool res = stream->Write(request);
+      Point got;
+
+      stream->Read(&got);
+      std::cout << "client got " << got.pointset() <<std::endl;
+    }
     Status status = stream->Finish();
 
     // Act upon its status.
     if (status.ok()) {
-      return reply.pointset();
+      // return reply.pointset();
+      return "conn ok";
     } else {
       std::cout << status.error_code() << ": " << status.error_message()
                 << std::endl;

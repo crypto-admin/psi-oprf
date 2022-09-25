@@ -29,6 +29,8 @@ cc_binary(
     srcs = ["psiServer.cc",
             "psiReceiver.cc",
             "psiReceiver.h",
+            "common.h",
+            "common.cc",
     ],
     defines = ["BAZEL_BUILD"],
     deps = [
@@ -41,10 +43,16 @@ cc_binary(
 
 cc_binary(
     name = "psiClient",
-    srcs = ["psiClient.cc"],
+    srcs = ["psiClient.cc",
+            "psiSender.h",
+        "psiSender.cc",
+        "common.h",
+        "common.cc",
+        ],
     defines = ["BAZEL_BUILD"],
     deps = [
         "//src/proto:ot_cc_grpc",
+        "//src/crypto:ecc",
         # http_archive made this label available for binding
         "@com_github_grpc_grpc//:grpc++",
     ],

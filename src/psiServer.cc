@@ -18,8 +18,6 @@
 
 #include <iostream>
 #include <memory>
-#include <string>
-#include <fstream>
 
 #ifdef BAZEL_BUILD
 #include "src/proto/ot.grpc.pb.h"
@@ -33,68 +31,7 @@
 using namespace PSI;
 using namespace std;
 
-int param_size = 9;
 
-struct psiparams {
-    ui32 senderSize;
-    ui32 receiverSize;
-    ui32 height; 
-    ui32 logHeight; 
-    ui32 width; 
-    ui32 hashLengthInBytes;  // h2 hash byte len, default 32
-    ui32 h1LengthInBytes; 
-    ui32 bucket1;
-    ui32 bucket2;
-};
-
-psiparams onlineparam = {1024, 1024*1024, 1024*1024, 20, 600, 32, 32, 256, 256};
-
-// read server params from config file, as csv, json..
-int Parserparam() {
-  string config;
-  ifstream config_file("src/config/serverConfig.csv", ios::in);
-  if (!config_file.is_open()) {
-    std::cout << "open config file fail." << std::endl;
-    return 1;
-  }
-  uint32_t param_temp[param_size]; // 7 is para num of pirparams
-  int index = 0;
-  while (getline(config_file, config)) {
-    param_temp[index] = atoi(config.c_str());
-    index++;
-    if (index > param_size) break;
-  }
-  if (index == param_size) {
-    onlineparam.senderSize = param_temp[0];
-    onlineparam.receiverSize = param_temp[1];
-    onlineparam.height = param_temp[2];
-    onlineparam.logHeight = param_temp[3];
-    onlineparam.width = param_temp[4]; // int to bool;
-    onlineparam.hashLengthInBytes = param_temp[5];
-    onlineparam.h1LengthInBytes = param_temp[6];
-    onlineparam.bucket1 = param_temp[7];
-    onlineparam.bucket2 = param_temp[8];
-  } else {
-    return 2; // param size error;
-  }
-  
-  return 0;
-}
-
-int InitData(std::string filePath, std::vector<string>& src) {
-  string ele;
-  ifstream srcFile(filePath, ios::in);
-  if (!srcFile.is_open()) {
-    std::cout << "open data file fail." << std::endl;
-    return 1;
-  }
-  uint32_t param_temp[param_size]; // 7 is para num of pirparams
-  int index = 0;
-  while (getline(srcFile, ele)) {
-    src.push_back(ele.c_str());
-    index++;
-  }
-}
 
 // Logic and data behind the server's behavior.
 class PsiServiceImpl final : public Psi::Service {
@@ -111,25 +48,8 @@ class PsiServiceImpl final : public Psi::Service {
     Point xa;
     xa.set_pointset(reply); 
     stream->Write(xa);
-    PsiReceiver r;
 
-    Parserparam();
-    std::vector<string> serverData;
-    string srcFilePath = "src/data/server.csv";
-    int res = InitData(srcFilePath, serverData);
-
-    r.run(stream, \
-      onlineparam.senderSize,
-      onlineparam.receiverSize,
-      onlineparam.height,
-      onlineparam.logHeight,
-      onlineparam.width,
-      serverData, 
-      onlineparam.hashLengthInBytes,
-      onlineparam.h1LengthInBytes,
-      onlineparam.bucket1, 
-      onlineparam.bucket2
-    );
+    int resPsiReceive = PsiReceive(stream);
 
     return Status::OK;
   }
