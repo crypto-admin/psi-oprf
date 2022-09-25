@@ -19,7 +19,7 @@ package ot;
 // The greeting service definition.
 service Psi {
   // Sends OT point
-  rpc SendPoint (Point) returns (Point) {}
+  rpc SendPoint (stream Point) returns (stream Point) {}
 }
 
 // The request message containing the Alice/Bob's ECC Point.

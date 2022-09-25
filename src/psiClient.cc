@@ -31,8 +31,10 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
+using grpc::ClientReaderWriter;
 using ot::Psi;
 using ot::Point;
+
 
 class PsiClient {
  public:
@@ -42,6 +44,14 @@ class PsiClient {
   // Assembles the client's payload, sends it and presents the response back
   // from the server.
   std::string SendPoint(const std::string& user) {
+    
+    // Context for the client. It could be used to convey extra information to
+    // the server and/or tweak certain RPC behaviors.
+    ClientContext context;
+
+    std::shared_ptr<ClientReaderWriter<Point, Point> > stream(
+        stub_->SendPoint(&context));
+
     // Data we are sending to the server.
     Point request;
     request.set_pointset(user);
@@ -49,12 +59,13 @@ class PsiClient {
     // Container for the data we expect from the server.
     Point reply;
 
-    // Context for the client. It could be used to convey extra information to
-    // the server and/or tweak certain RPC behaviors.
-    ClientContext context;
-
     // The actual RPC.
-    Status status = stub_->SendPoint(&context, request, &reply);
+    bool res = stream->Write(request);
+    Point got;
+
+    stream->Read(&got);
+    std::cout << "client got " << got.pointset() <<std::endl;
+    Status status = stream->Finish();
 
     // Act upon its status.
     if (status.ok()) {

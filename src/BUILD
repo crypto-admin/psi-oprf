@@ -26,10 +26,14 @@ load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
 cc_binary(
     name = "psiServer",
-    srcs = ["psiServer.cc"],
+    srcs = ["psiServer.cc",
+            "psiReceiver.cc",
+            "psiReceiver.h",
+    ],
     defines = ["BAZEL_BUILD"],
     deps = [
         "//src/proto:ot_cc_grpc",
+        "//src/crypto:ecc",
         # http_archive made this label available for binding
         "@com_github_grpc_grpc//:grpc++",
     ],
