@@ -52,9 +52,14 @@ class PsiClient {
     // the server and/or tweak certain RPC behaviors.
     ClientContext context;
 
-    std::shared_ptr<ClientReaderWriter<Point, Point> > stream(stub_->SendPoint(&context));
+    gpr_timespec timespec;
+    timespec.tv_sec = 10;
+    timespec.tv_nsec = 0;
+    timespec.clock_type=GPR_TIMESPAN;
 
-    int psiRes = PsiSend(stream);
+    context.set_deadline(timespec);
+
+    std::shared_ptr<ClientReaderWriter<Point, Point> > stream(stub_->SendPoint(&context));
 
     if (debug == 1) { // test conn
       // Data we are sending to the server.
@@ -71,6 +76,12 @@ class PsiClient {
       stream->Read(&got);
       std::cout << "client got " << got.pointset() <<std::endl;
     }
+
+
+
+    int psiRes = PsiSend(stream);
+
+
     Status status = stream->Finish();
 
     // Act upon its status.

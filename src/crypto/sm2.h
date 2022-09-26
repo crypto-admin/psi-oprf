@@ -51,6 +51,10 @@ typedef struct
 
 typedef projpoint *point;
 
+// 202209 add basepointmul to impl OT
+void basepointmul(epoint p, big n);
+
+
 /***************************************************
 * function			   : KDF
 * description		   : KDF函数

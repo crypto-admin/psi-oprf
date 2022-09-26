@@ -4,7 +4,12 @@ namespace PSI {
 
 
 #define ui32 unsigned int
+#define ui8  unsigned char
 #define block unsigned char[16]
+
+struct block32 {
+    ui32 rand[8];
+};
 
     struct psiparams {
         ui32 senderSize;
