@@ -9,9 +9,8 @@
 
 namespace PSI {
 
-
-    int param_size = 9;
-    psiparams onlineparam = {1024, 1024*1024, 1024*1024, 20, 60, 32, 32, 256, 256};
+int param_size = 9;
+psiparams onlineparam = {1024, 1024*1024, 1024*1024, 20, 60, 32, 32, 256, 256};
 
     // read server params from config file, as csv, json..
 int Parserparam() {
@@ -33,13 +32,13 @@ int Parserparam() {
     onlineparam.receiverSize = param_temp[1];
     onlineparam.height = param_temp[2];
     onlineparam.logHeight = param_temp[3];
-    onlineparam.width = param_temp[4]; // int to bool;
+    onlineparam.width = param_temp[4];  // int to bool;
     onlineparam.hashLengthInBytes = param_temp[5];
     onlineparam.h1LengthInBytes = param_temp[6];
     onlineparam.bucket1 = param_temp[7];
     onlineparam.bucket2 = param_temp[8];
   } else {
-    return 2; // param size error;
+    return 2;  // param size error;
   }
   
   return 0;
@@ -52,7 +51,7 @@ int InitData(std::string filePath, std::vector<string>& src) {
     std::cout << "open data file fail." << std::endl;
     return 1;
   }
-  uint32_t param_temp[param_size]; // 7 is para num of pirparams
+  uint32_t param_temp[param_size];  // 7 is para num of pirparams
   int index = 0;
   while (getline(srcFile, ele)) {
     src.push_back(ele.c_str());
@@ -99,7 +98,10 @@ int AffinePoint2String(affpoint& point, std::string& dst) {
 }
 
 
-int BatchOT(ServerReaderWriter<Point, Point>* stream, const ui32& width, ui8** k0Set, ui8** k1Set) {
+int BatchOT(ServerReaderWriter<Point, Point>* stream,
+            const ui32& width,
+            ui8** k0Set,
+            ui8** k1Set) {
   // ui32 randa[8];
   // GetRandomUint32(8, randa);
   // epoint A1;
@@ -109,7 +111,6 @@ int BatchOT(ServerReaderWriter<Point, Point>* stream, const ui32& width, ui8** k
   // for (int i = 0; i < DIG_LEN; i++) {
   //   std::cout << A.x[i] << std::endl;
   // }
-  
   std::vector<affpoint> randASet;
   std::vector<block32> scalarSet;
   ui32** AxSet;
@@ -127,11 +128,10 @@ int BatchOT(ServerReaderWriter<Point, Point>* stream, const ui32& width, ui8** k
     AffinePoint2String(p, temp);
     Point send;
     if (temp != "") {
-      send.set_pointset(temp);  
+      send.set_pointset(temp);
     } else {
       send.set_pointset("point");
     }
-    
     stream->Write(send);
   }
   sleep(3);
@@ -140,8 +140,7 @@ int BatchOT(ServerReaderWriter<Point, Point>* stream, const ui32& width, ui8** k
   return 0;
 }
 
-    
-    void PsiReceiver::run(
+void PsiReceiver::run(
                 ServerReaderWriter<Point, Point>* stream,
                 const ui32& senderSize,
                 const ui32& receiverSize,
@@ -155,8 +154,8 @@ int BatchOT(ServerReaderWriter<Point, Point>* stream, const ui32& width, ui8** k
                 const ui32& bucket2) {
         clock_t start;
         auto heightInBytes = (height + 7) / 8;
-		auto widthInBytes = (width + 7) / 8;
-		auto locationInBytes = (logHeight + 7) / 8;
+    auto widthInBytes = (width + 7) / 8;
+    auto locationInBytes = (logHeight + 7) / 8;
 		auto receiverSizeInBytes = (receiverSize + 7) / 8;
 		auto shift = (1 << logHeight) - 1;
 		auto widthBucket1 = sizeof(block) / locationInBytes;  // 16/3 = 5   
