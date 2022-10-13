@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
 #include "crypto/sm2.h"
 #include "src/proto/ot.grpc.pb.h"
 
@@ -50,7 +52,7 @@ int GetRandom(int length, unsigned char * dst);
 int GetRandomUint32(int length, ui32* dst);
 int StringSplit(const std::string src,
                 char split,
-                std::vector<std::string> &des);
+                std::vector<std::string>* des);
 
 int Point2AffinePoint(Point src, affpoint* dst);
 int AffinePoint2String(const affpoint& point, std::string* dst);

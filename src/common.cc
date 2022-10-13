@@ -54,11 +54,11 @@ int AffinePoint2String(const affpoint& point, std::string* dst) {
 
 int StringSplit(const std::string src,
                 char split,
-                std::vector<std::string> &des) {
+                std::vector<std::string>* des) {
   std::istringstream iss(src);
   std::string token;
   while (getline(iss, token, split)) {
-    des.push_back(token);
+    des->push_back(token);
   }
   return 0;
 }
@@ -68,10 +68,10 @@ int Point2AffinePoint(Point src, affpoint* dst) {
   std::vector<std::string> x;
   std::vector<std::string> y;
 
-  StringSplit(src.pointset(), ',', xy);
+  StringSplit(src.pointset(), ',', &xy);
   // assert(x.size == 2);  // 2个坐标(x, y)
-  StringSplit(xy[0], '|', x);
-  StringSplit(xy[1], '|', y);
+  StringSplit(xy[0], '|', &x);
+  StringSplit(xy[1], '|', &y);
   for (int i = 0; i < DIG_LEN; i++) {
     dst->x[i] = atoi(x[i].c_str());
     dst->y[i] = atoi(y[i].c_str());

@@ -99,7 +99,7 @@ int ComputeKey(std::string src,
   // 1. convert src to affpoint
   // 2. k0 = aB, k1 = a(B-A)
   std::vector<std::string> pointSet;
-  StringSplit(src, '\n', pointSet);  // 解析出width个Point
+  StringSplit(src, '\n', &pointSet);  // 解析出width个Point
   for (int i=0; i < width; i++) {
     Point B;
     affpoint k;
