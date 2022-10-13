@@ -136,11 +136,12 @@ int Point2AffinePoint(Point src, affpoint* dst) {
 
   return 0;
 }
+
 int BatchOTSender(ClientReaderWriter<Point, Point>* stream,
   const ui32& width,
-  unsigned char* choiceB) {
+  unsigned char* choiceB,
+  std::vector<affpoint>& kc) {
   Point randA;
-  Point randB;
   std::vector<Point> randASet;
   std::vector<Point> randBSet;
   std::string randBSetString = "";
@@ -168,15 +169,18 @@ int BatchOTSender(ClientReaderWriter<Point, Point>* stream,
     if (static_cast<int>(choiceB[i]) == 1) {
       pointadd(&B, &B, &A);
     }
+    affpoint k;
+    pointmul(&k, &A, randb.rand);
+    kc.push_back(k);
     std::string temp = "";
     AffinePoint2String(B, &temp);
-    randB.set_pointset(temp);
-    randBSet.push_back(randB);
     randBSetString += temp;
   }
   Point batchB;
-  batchB.set_pointset(randASetString);
+  batchB.set_pointset(randBSetString);
   stream->Write(batchB);
+  // compute k_c
+
 
   return 0;
 }
@@ -207,7 +211,9 @@ void PsiSendRun(
     choiceB[i] = static_cast<int>(choiceB[i]) % 2;
     // std::cout << "choice i = " << int(choiceB[i]) << std::endl;
   }
-  auto res = BatchOTSender(stream, width, choiceB);
+  std::vector<affpoint> kc;
+  auto res = BatchOTSender(stream, width, choiceB, kc);
+  std::cout << "sender batch ot kc size = " << kc.size() << std::endl;
 
 }
 

@@ -54,6 +54,8 @@ typedef projpoint *point;
 // 202209 add basepointmul/pointadd to impl OT
 void basepointmul(epoint p, big n);
 void pointadd(epoint r, epoint p, epoint q);
+void pointmul(epoint p, epoint q, big n);
+void modinv(big x, big y, big p);
 
 
 /***************************************************

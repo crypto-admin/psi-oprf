@@ -18,6 +18,7 @@
  */
 #include <unistd.h>
 #include <iostream>
+#include <sstream>
 #include <memory>
 #include <random>
 
@@ -29,6 +30,10 @@ namespace PSI {
 
 int param_size = 9;
 psiparams onlineparam = {1024, 1024*1024, 1024*1024, 20, 60, 32, 32, 256, 256};
+// p = 2^256-2^224-2^96+2^64-1
+small P[DIG_LEN] =
+{ 0xFFFFFFFF,0xFFFFFFFF,0x00000000,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFE };
+
 
     // read server params from config file, as csv, json..
 int Parserparam() {
@@ -121,9 +126,78 @@ int AffinePoint2String(const affpoint& point, std::string* dst) {
   return 0;
 }
 
+int StringSplit(const std::string src,
+                char split,
+                std::vector<std::string> &des) {
+  std::istringstream iss(src);
+  std::string token;
+  while (getline(iss, token, split)) {
+    des.push_back(token);
+  }
+  return 0;
+}
+
+int Point2AffinePoint(Point src, affpoint* dst) {
+  std::vector<std::string> xy;
+  std::vector<std::string> x;
+  std::vector<std::string> y;
+
+  StringSplit(src.pointset(), ',', xy);
+  // assert(x.size == 2);  // 2个坐标(x, y)
+  StringSplit(xy[0], '|', x);
+  StringSplit(xy[1], '|', y);
+  for (int i = 0; i < DIG_LEN; i++) {
+    dst->x[i] = atoi(x[i].c_str());
+    dst->y[i] = atoi(y[i].c_str());
+  }
+
+  return 0;
+}
+
+
+affpoint PointNeg(affpoint src) {
+  affpoint fu;
+  for (int i = 0; i < DIG_LEN; i++) {
+    fu.x[i] = src.x[i];
+    fu.y[i] = P[i] -src.y[i];
+  }
+  return fu;
+}
+
+int ComputeKey(std::string src,
+              std::vector<affpoint> randASet,
+              int width,
+              std::vector<block32> scalarSet,
+              std::vector<affpoint>& k0,
+              std::vector<affpoint>& k1) {
+  // compute k0, k1; src is B, string
+  // 1. convert src to affpoint
+  // 2. k0 = aB, k1 = a(B-A)
+  std::vector<std::string> pointSet;
+  StringSplit(src, '\n', pointSet);  // 解析出width个Point
+  for (int i=0; i < width; i++) {
+    Point B;
+    affpoint k;
+    affpoint temp0;
+    affpoint temp1;
+    B.set_pointset(pointSet[i]);
+    Point2AffinePoint(B, &k);  // 有重复代码，优化！
+    pointmul(&temp0, &k, scalarSet[i].rand);
+    k0.push_back(temp0);
+    auto fuA = PointNeg(randASet[i]);
+    pointadd(&temp1, &k, &fuA);
+    pointmul(&temp1, &temp1, scalarSet[i].rand);
+    k1.push_back(temp1);
+  }
+
+  return 0;
+
+}
 
 int BatchOT(ServerReaderWriter<Point, Point>* stream,
-            const ui32& width) {
+            const ui32& width,
+            std::vector<affpoint>& k0,
+            std::vector<affpoint>& k1) {
   std::vector<affpoint> randASet;
   std::vector<block32> scalarSet;
 
@@ -147,6 +221,11 @@ int BatchOT(ServerReaderWriter<Point, Point>* stream,
   Point batchB;
   stream->Read(&batchB);
   std::cout << "server got B from client" << std::endl;
+  // compute k0, k1
+  // k0 = aB
+  // k1 = a(B-A)
+  ComputeKey(batchB.pointset(), randASet, width, scalarSet, k0, k1);
+
   sleep(1);
   std::cout << "server ot end." << std::endl;
 
@@ -154,17 +233,17 @@ int BatchOT(ServerReaderWriter<Point, Point>* stream,
 }
 
 void PsiReceiver::run(
-        ServerReaderWriter<Point, Point>* stream,
-        const ui32& senderSize,
-        const ui32& receiverSize,
-        const ui32& height,
-        const ui32& logHeight,
-        const ui32& width,
-        std::vector<std::string>& receiverSet,
-        const ui32& hashLengthInBytes,
-        const ui32& h1LengthInBytes,
-        const ui32& bucket1,
-        const ui32& bucket2) {
+      ServerReaderWriter<Point, Point>* stream,
+      const ui32& senderSize,
+      const ui32& receiverSize,
+      const ui32& height,
+      const ui32& logHeight,
+      const ui32& width,
+      std::vector<std::string>& receiverSet,
+      const ui32& hashLengthInBytes,
+      const ui32& h1LengthInBytes,
+      const ui32& bucket1,
+      const ui32& bucket2) {
     clock_t start;
     auto heightInBytes = (height + 7) / 8;
     auto widthInBytes = (width + 7) / 8;
@@ -174,9 +253,10 @@ void PsiReceiver::run(
     auto widthBucket1 = sizeof(block) / locationInBytes;  // 16/3 = 5
 
     ///////////////////// Base OTs ///////////////////////////
-    ui8** k0Set = NULL;
-    ui8** k1Set = NULL;
-    BatchOT(stream, width);
+    std::vector<affpoint> k0;
+    std::vector<affpoint> k1;
+    BatchOT(stream, width, k0, k1);
+    std::cout << "server BatchOT k0 size = " << k0.size() << std::endl;
   }
 
 
