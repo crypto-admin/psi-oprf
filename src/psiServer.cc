@@ -31,25 +31,29 @@
 using namespace PSI;
 using namespace std;
 
+int debug = 1;
 
 
 // Logic and data behind the server's behavior.
 class PsiServiceImpl final : public Psi::Service {
+  Status SendPoint(ServerContext* context,
+                  ServerReaderWriter<Point, Point>* stream) override { 
+    if (debug != 0) {
+      for (int loop = 0; loop < 100; loop++) {
+        Point request;
+        stream->Read(&request);
+        auto reply = request.pointset();
+        std::cout << "get request from client = " << reply << std::endl;
+        reply = reply + "got";
+        Point xa;
+        xa.set_pointset(reply);
+        stream->Write(xa);
+      }
+  
+    }
 
-  Status SendPoint(ServerContext* context, 
-                  ServerReaderWriter<Point, Point>* stream
-                 ) override {
 
-    Point request;
-    stream->Read(&request);
-    auto reply = request.pointset();   
-    std::cout << "get request from client = " << reply << std::endl;
-    reply = reply + "got";
-    Point xa;
-    xa.set_pointset(reply); 
-    stream->Write(xa);
-
-    int resPsiReceive = PsiReceive(stream);
+    int resPsiReceive = PsiReceive(stream);  // 20221012确认是内部函数的导致的double free
 
     return Status::OK;
   }

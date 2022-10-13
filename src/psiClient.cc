@@ -59,22 +59,26 @@ class PsiClient {
 
     context.set_deadline(timespec);
 
-    std::shared_ptr<ClientReaderWriter<Point, Point> > stream(stub_->SendPoint(&context));
+    std::shared_ptr<ClientReaderWriter<Point, Point> > stream1(stub_->SendPoint(&context));
+
+    ClientReaderWriter<Point, Point>* stream = stream1.get();
 
     if (debug == 1) { // test conn
       // Data we are sending to the server.
-      Point request;
-      request.set_pointset(user);
+      for (int loop = 0; loop < 100; loop++) {
+        Point request;
+        request.set_pointset(user);
 
-      // Container for the data we expect from the server.
-      Point reply;
+        // Container for the data we expect from the server.
+        Point reply;
 
-      // The actual RPC.
-      bool res = stream->Write(request);
-      Point got;
+        // The actual RPC.
+        bool res = stream->Write(request);
+        Point got;
 
-      stream->Read(&got);
-      std::cout << "client got " << got.pointset() <<std::endl;
+        stream->Read(&got);
+        std::cout << "client got " << got.pointset() <<std::endl;
+      }
     }
 
 

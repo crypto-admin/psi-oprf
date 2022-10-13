@@ -3,6 +3,8 @@
 */
 
 #include <fstream>
+#include <vector>
+#include <string>
 #include "psiSender.h"
 
 
@@ -65,15 +67,14 @@ int InitData(const std::string filePath, std::vector<std::string>& src) {
     index++;
   }
 }
-   
 
-int BatchOTSender(std::shared_ptr<ClientReaderWriter<Point, Point> > stream, 
-  const ui32& width, 
+int BatchOTSender(ClientReaderWriter<Point, Point>* stream,
+  const ui32& width,
   unsigned char* choiceB) {
   for (int i=0; i < width; i++) {
     choiceB[i] = rand() % 2;
   }
-  
+
   Point randA;
   std::vector<Point> randASet;
 
@@ -84,68 +85,62 @@ int BatchOTSender(std::shared_ptr<ClientReaderWriter<Point, Point> > stream,
       std::cout <<"cleint read point" << randA.pointset() << std::endl;
       std::cout << randASet.size() << std::endl;
     } else {
-      std::cout << "segf ault " << std::endl;
+      std::cout << "segment fault " << ret << std::endl;
     }
- 
   }
   std::cout << "clent get A" << randASet.size() << std::endl;
 
-  
   return 0;
 }
-void PsiSender::run(
-                std::shared_ptr<ClientReaderWriter<Point, Point> > stream,
+void PsiSendRun(
+                ClientReaderWriter<Point, Point>* stream,
                 const ui32& senderSize,
                 const ui32& receiverSize,
                 const ui32& height,
                 const ui32& logHeight,
                 const ui32& width,
-                std::vector<std::string>& receiverSet,
+                std::vector<std::string>& senderSet,
                 const ui32& hashLengthInBytes,
                 const ui32& h1LengthInBytes,
                 const ui32& bucket1,
                 const ui32& bucket2) {
-    clock_t start;
-    auto heightInBytes = (height + 7) / 8;
-    auto widthInBytes = (width + 7) / 8;
-    auto locationInBytes = (logHeight + 7) / 8;
-		auto receiverSizeInBytes = (receiverSize + 7) / 8;
-		auto shift = (1 << logHeight) - 1;
-		auto widthBucket1 = sizeof(block) / locationInBytes;  // 16/3 = 5   
-     std::cout << "test3" << std::endl;
+  clock_t start;
+  auto heightInBytes = (height + 7) / 8;
+  auto widthInBytes = (width + 7) / 8;
+  auto locationInBytes = (logHeight + 7) / 8;
+  auto receiverSizeInBytes = (receiverSize + 7) / 8;
+  auto shift = (1 << logHeight) - 1;
+  auto widthBucket1 = sizeof(block) / locationInBytes;  // 16/3 = 5
 
-    	///////////////////// Base OTs ///////////////////////////
-    unsigned char* choiceB = new unsigned char(width);
-    auto res = BatchOTSender(stream, width, choiceB);
-		
+  ///////////////////// Base OTs ///////////////////////////
+  unsigned char* choiceB = new unsigned char(width);
+  auto res = BatchOTSender(stream, width, choiceB);
 
 }
-    
-    int PsiSend(std::shared_ptr<ClientReaderWriter<Point, Point> >stream) {
 
-        Parserparam("src/config/clientConfig.csv");
-        std::vector<std::string> clientData;
-        std::string srcFilePath = "src/data/client.csv";
-        // int res = InitData(srcFilePath, clientData);
-        for (int i=0; i<100; i++) {
-          clientData.push_back(std::to_string(i+2));
-        }
+int PsiSend(ClientReaderWriter<Point, Point>* stream) {
+  Parserparam("src/config/clientConfig.csv");
+  std::vector<std::string> clientData;
+  std::string srcFilePath = "src/data/client.csv";
+  // int res = InitData(srcFilePath, clientData);
+  for (int i=0; i < onlineparam.width; i++) {
+    clientData.push_back(std::to_string(i+2));
+  }
 
-         std::cout << "test1" << std::endl;
-        PsiSender sender;
-        sender.run(stream, \
-            onlineparam.senderSize,
-            onlineparam.receiverSize,
-            onlineparam.height,
-            onlineparam.logHeight,
-            onlineparam.width,
-            clientData,
-            onlineparam.hashLengthInBytes,
-            onlineparam.h1LengthInBytes,
-            onlineparam.bucket1,
-            onlineparam.bucket2);
+  // PsiSender sender;
+  PsiSendRun(stream, \
+      onlineparam.senderSize,
+      onlineparam.receiverSize,
+      onlineparam.height,
+      onlineparam.logHeight,
+      onlineparam.width,
+      clientData,
+      onlineparam.hashLengthInBytes,
+      onlineparam.h1LengthInBytes,
+      onlineparam.bucket1,
+      onlineparam.bucket2);
 
-        return 0;
-    }
+  return 0;
+}
 
 }
