@@ -6,25 +6,25 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include <sstream>
 #include <random>
 #include "psiSender.h"
+#include "common.h"
 
 
 namespace PSI {
 
-    const int param_size = 9;
-    psiparams onlineparam = {
-      1024,
-      1024*1024,
-      1024*1024,
-      20,
-      60,
-      32,
-      32,
-      256,
-      256
-    };
+const int param_size = 9;
+psiparams onlineparam = {
+  1024,
+  1024*1024,
+  1024*1024,
+  20,
+  60,
+  32,
+  32,
+  256,
+  256
+};
 
 int Parserparam(std::string configPath ) {
   std::string config;
@@ -69,72 +69,6 @@ int InitData(const std::string filePath, std::vector<std::string>& src) {
     src.push_back(ele.c_str());
     index++;
   }
-}
-
-int GetRandom(int length, unsigned char* dst) {
-  std::random_device rd;
-  std::default_random_engine eng(rd());
-  std::uniform_int_distribution<int> distr(0, 256);
-
-  for (int n = 0; n < length; n++) {
-    dst[n] = distr(eng);
-  }
-
-  return 0;
-}
-
-int GetRandomUint32(int length, ui32* dst) {
-  unsigned char temp[4*length];
-  GetRandom(4*length, temp);
-
-  for (int i = 0; i < length; i++) {
-    dst[i] = (temp[4*i] << 24) +
-            (temp[4*i+1] << 16) +
-            temp[4*i+2] << 8 +
-            temp[4*i+3];
-  }
-}
-
-int AffinePoint2String(const affpoint& point, std::string* dst) {
-  for (int i = 0; i < DIG_LEN; i++) {
-    *dst += to_string(point.x[i]);
-    *dst += "|";
-  }
-  *dst += ",";
-    for (int i = 0; i < DIG_LEN; i++) {
-    *dst += to_string(point.y[i]);
-    *dst += "|";
-  }
-  *dst += "\n";
-  return 0;
-}
-
-int StringSplit(const std::string src,
-                char split,
-                std::vector<std::string> &des) {
-  std::istringstream iss(src);
-  std::string token;
-  while (getline(iss, token, split)) {
-    des.push_back(token);
-  }
-  return 0;
-}
-
-int Point2AffinePoint(Point src, affpoint* dst) {
-  std::vector<std::string> xy;
-  std::vector<std::string> x;
-  std::vector<std::string> y;
-
-  StringSplit(src.pointset(), ',', xy);
-  // assert(x.size == 2);  // 2个坐标(x, y)
-  StringSplit(xy[0], '|', x);
-  StringSplit(xy[1], '|', y);
-  for (int i = 0; i < DIG_LEN; i++) {
-    dst->x[i] = atoi(x[i].c_str());
-    dst->y[i] = atoi(y[i].c_str());
-  }
-
-  return 0;
 }
 
 int BatchOTSender(ClientReaderWriter<Point, Point>* stream,
@@ -185,17 +119,17 @@ int BatchOTSender(ClientReaderWriter<Point, Point>* stream,
   return 0;
 }
 void PsiSendRun(
-                ClientReaderWriter<Point, Point>* stream,
-                const ui32& senderSize,
-                const ui32& receiverSize,
-                const ui32& height,
-                const ui32& logHeight,
-                const ui32& width,
-                std::vector<std::string>& senderSet,
-                const ui32& hashLengthInBytes,
-                const ui32& h1LengthInBytes,
-                const ui32& bucket1,
-                const ui32& bucket2) {
+      ClientReaderWriter<Point, Point>* stream,
+      const ui32& senderSize,
+      const ui32& receiverSize,
+      const ui32& height,
+      const ui32& logHeight,
+      const ui32& width,
+      std::vector<std::string>& senderSet,
+      const ui32& hashLengthInBytes,
+      const ui32& h1LengthInBytes,
+      const ui32& bucket1,
+      const ui32& bucket2) {
   clock_t start;
   auto heightInBytes = (height + 7) / 8;
   auto widthInBytes = (width + 7) / 8;
@@ -228,16 +162,16 @@ int PsiSend(ClientReaderWriter<Point, Point>* stream) {
 
   // PsiSender sender;
   PsiSendRun(stream, \
-      onlineparam.senderSize,
-      onlineparam.receiverSize,
-      onlineparam.height,
-      onlineparam.logHeight,
-      onlineparam.width,
-      clientData,
-      onlineparam.hashLengthInBytes,
-      onlineparam.h1LengthInBytes,
-      onlineparam.bucket1,
-      onlineparam.bucket2);
+    onlineparam.senderSize,
+    onlineparam.receiverSize,
+    onlineparam.height,
+    onlineparam.logHeight,
+    onlineparam.width,
+    clientData,
+    onlineparam.hashLengthInBytes,
+    onlineparam.h1LengthInBytes,
+    onlineparam.bucket1,
+    onlineparam.bucket2);
 
   return 0;
 }

@@ -2,10 +2,10 @@
 #pragma once
 
 #include <iostream>
+#include <sstream>
 #include <memory>
 #include <grpcpp/grpcpp.h>
 #include "src/proto/ot.grpc.pb.h"
-#include "crypto/sm2.h"
 #include "common.h"
 
 
