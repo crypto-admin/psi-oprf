@@ -1,10 +1,28 @@
 
+/*
+ *
+ * Copyright 2022 crypto-admin.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+#include <unistd.h>
+#include <iostream>
+#include <memory>
+#include <random>
+
 #include "psiReceiver.h"
 #include "crypto/sm2.h"
-
-#include <iostream>
-#include <unistd.h>
-#include <memory>
 
 
 namespace PSI {
@@ -20,7 +38,7 @@ int Parserparam() {
     std::cout << "open config file fail." << std::endl;
     return 1;
   }
-  uint32_t param_temp[param_size]; // 7 is para num of pirparams
+  uint32_t param_temp[param_size];  // 9 is para num of pirparams
   int index = 0;
   while (getline(config_file, config)) {
     param_temp[index] = atoi(config.c_str());
@@ -39,8 +57,7 @@ int Parserparam() {
     onlineparam.bucket2 = param_temp[8];
   } else {
     return 2;  // param size error;
-  }
-  
+  } 
   return 0;
 }
 
@@ -60,11 +77,14 @@ int InitData(std::string filePath, std::vector<string>& src) {
 }
 
 int GetRandom(int length, unsigned char * dst) {
-  // 获取length字节的随机数; TODO:update speed.
-  unsigned int local_seed = time(NULL);
-  for (int i = 0; i < length ; i++) {
-    dst[i] = rand_r(&local_seed) % 256;
+  std::random_device rd;
+  std::default_random_engine eng(rd());
+  std::uniform_int_distribution<int> distr(0, 256);
+
+  for (int n = 0; n < length; n++) {
+    dst[n] = distr(eng);
   }
+
   return 0;
 }
 
@@ -90,12 +110,14 @@ int GetRandomUint32(int length, ui32* dst) {
 int AffinePoint2String(const affpoint& point, std::string* dst) {
   for (int i = 0; i < DIG_LEN; i++) {
     *dst += to_string(point.x[i]);
+    *dst += "|";
   }
-  *dst += "\n";
+  *dst += ",";
     for (int i = 0; i < DIG_LEN; i++) {
     *dst += to_string(point.y[i]);
+    *dst += "|";
   }
-
+  *dst += "\n";
   return 0;
 }
 
@@ -105,7 +127,8 @@ int BatchOT(ServerReaderWriter<Point, Point>* stream,
   std::vector<affpoint> randASet;
   std::vector<block32> scalarSet;
 
-  for (int i=0; i < width; i++) {
+  std::string randASetString = "";
+  for (int i=0; i < width; i++) {  // why not use batch?
     block32 randa;
     GetRandomUint32(8, randa.rand);
     affpoint p;
@@ -114,14 +137,16 @@ int BatchOT(ServerReaderWriter<Point, Point>* stream,
     scalarSet.push_back(randa);
     std::string temp = "";
     AffinePoint2String(p, &temp);
-    Point send;
-    if (temp != "") {
-      send.set_pointset(temp);
-    } else {
-      send.set_pointset("point");
-    }
-    stream->Write(send);
+    randASetString += temp;
   }
+  Point send;
+  send.set_pointset(randASetString);
+  stream->Write(send);
+  std::cout << "server send A to client." << std::endl;
+  // Receiver B from Bob
+  Point batchB;
+  stream->Read(&batchB);
+  std::cout << "server got B from client" << std::endl;
   sleep(1);
   std::cout << "server ot end." << std::endl;
 

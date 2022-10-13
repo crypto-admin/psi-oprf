@@ -11,6 +11,7 @@
 
 using grpc::ClientReaderWriter;
 using ot::Point;
+using namespace std;
 
 namespace PSI {
 

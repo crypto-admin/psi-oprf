@@ -2,9 +2,12 @@
   Copyright [2022] <Crypto-admin>
 */
 
+
 #include <fstream>
 #include <vector>
 #include <string>
+#include <sstream>
+#include <random>
 #include "psiSender.h"
 
 
@@ -68,27 +71,112 @@ int InitData(const std::string filePath, std::vector<std::string>& src) {
   }
 }
 
+int GetRandom(int length, unsigned char* dst) {
+  std::random_device rd;
+  std::default_random_engine eng(rd());
+  std::uniform_int_distribution<int> distr(0, 256);
+
+  for (int n = 0; n < length; n++) {
+    dst[n] = distr(eng);
+  }
+
+  return 0;
+}
+
+int GetRandomUint32(int length, ui32* dst) {
+  unsigned char temp[4*length];
+  GetRandom(4*length, temp);
+
+  for (int i = 0; i < length; i++) {
+    dst[i] = (temp[4*i] << 24) +
+            (temp[4*i+1] << 16) +
+            temp[4*i+2] << 8 +
+            temp[4*i+3];
+  }
+}
+
+int AffinePoint2String(const affpoint& point, std::string* dst) {
+  for (int i = 0; i < DIG_LEN; i++) {
+    *dst += to_string(point.x[i]);
+    *dst += "|";
+  }
+  *dst += ",";
+    for (int i = 0; i < DIG_LEN; i++) {
+    *dst += to_string(point.y[i]);
+    *dst += "|";
+  }
+  *dst += "\n";
+  return 0;
+}
+
+int StringSplit(const std::string src,
+                char split,
+                std::vector<std::string> &des) {
+  std::istringstream iss(src);
+  std::string token;
+  while (getline(iss, token, split)) {
+    des.push_back(token);
+  }
+  return 0;
+}
+
+int Point2AffinePoint(Point src, affpoint* dst) {
+  std::vector<std::string> xy;
+  std::vector<std::string> x;
+  std::vector<std::string> y;
+
+  StringSplit(src.pointset(), ',', xy);
+  // assert(x.size == 2);  // 2个坐标(x, y)
+  StringSplit(xy[0], '|', x);
+  StringSplit(xy[1], '|', y);
+  for (int i = 0; i < DIG_LEN; i++) {
+    dst->x[i] = atoi(x[i].c_str());
+    dst->y[i] = atoi(y[i].c_str());
+  }
+
+  return 0;
+}
 int BatchOTSender(ClientReaderWriter<Point, Point>* stream,
   const ui32& width,
   unsigned char* choiceB) {
-  for (int i=0; i < width; i++) {
-    choiceB[i] = rand() % 2;
-  }
-
   Point randA;
+  Point randB;
   std::vector<Point> randASet;
+  std::vector<Point> randBSet;
+  std::string randBSetString = "";
 
-  for (int i = 0; i < width; i++) {
-    auto ret = stream->Read(&randA);
-    if (ret == true) {
-      randASet.push_back(randA);
-      std::cout <<"cleint read point" << randA.pointset() << std::endl;
-      std::cout << randASet.size() << std::endl;
-    } else {
-      std::cout << "segment fault " << ret << std::endl;
-    }
+  auto ret = stream->Read(&randA);
+  std::string randASetString = randA.pointset();
+  std::cout << "batchot sender get ASet = " << randASetString << std::endl;
+
+  std::istringstream iss(randASetString);
+  std::string token;
+  while (getline(iss, token, '\n')) {
+    randA.set_pointset(token);
+    randASet.push_back(randA);
   }
-  std::cout << "clent get A" << randASet.size() << std::endl;
+
+  std::cout << "clent get randASet size = " << randASet.size() << std::endl;
+  for (int i=0; i < width; i++) {  // why not use batch?
+    block32 randb;
+    GetRandomUint32(8, randb.rand);
+    affpoint A;
+    affpoint B;
+    basepointmul(&B, randb.rand);  // pointB
+    Point2AffinePoint(randASet[i], &A);
+
+    if (static_cast<int>(choiceB[i]) == 1) {
+      pointadd(&B, &B, &A);
+    }
+    std::string temp = "";
+    AffinePoint2String(B, &temp);
+    randB.set_pointset(temp);
+    randBSet.push_back(randB);
+    randBSetString += temp;
+  }
+  Point batchB;
+  batchB.set_pointset(randASetString);
+  stream->Write(batchB);
 
   return 0;
 }
@@ -113,7 +201,12 @@ void PsiSendRun(
   auto widthBucket1 = sizeof(block) / locationInBytes;  // 16/3 = 5
 
   ///////////////////// Base OTs ///////////////////////////
-  unsigned char* choiceB = new unsigned char(width);
+  unsigned char * choiceB = new unsigned char[width];
+  GetRandom(width, choiceB);
+  for (int i=0; i < width; i++) {
+    choiceB[i] = static_cast<int>(choiceB[i]) % 2;
+    // std::cout << "choice i = " << int(choiceB[i]) << std::endl;
+  }
   auto res = BatchOTSender(stream, width, choiceB);
 
 }

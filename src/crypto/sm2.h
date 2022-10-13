@@ -51,8 +51,9 @@ typedef struct
 
 typedef projpoint *point;
 
-// 202209 add basepointmul to impl OT
+// 202209 add basepointmul/pointadd to impl OT
 void basepointmul(epoint p, big n);
+void pointadd(epoint r, epoint p, epoint q);
 
 
 /***************************************************
