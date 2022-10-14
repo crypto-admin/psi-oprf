@@ -13,17 +13,8 @@
 namespace PSI {
 
 const int param_size = 9;
-psiparams onlineparam = {
-  1024,
-  1024*1024,
-  1024*1024,
-  20,
-  10,
-  32,
-  32,
-  256,
-  256
-};
+psiparams onlineparam = {1024, 1024, 1024, 10, 10, 32, 32, 256, 256};
+
 
 int Parserparam(std::string configPath ) {
   std::string config;

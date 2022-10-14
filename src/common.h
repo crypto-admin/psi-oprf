@@ -21,6 +21,8 @@
 #include <string>
 #include <vector>
 #include "crypto/sm2.h"
+#include "crypto/sm4.h"
+#include "crypto/sm3_hash.h"
 #include "src/proto/ot.grpc.pb.h"
 
 using ot::Point;
@@ -29,8 +31,11 @@ namespace PSI {
 
 
 #define ui32 unsigned int
-#define ui8  unsigned char
-#define block unsigned char[16]
+#define u8  unsigned char
+
+struct block {
+    unsigned char msg[16];
+};
 
 struct block32 {
     ui32 rand[8];
@@ -58,6 +63,8 @@ int StringSplit(const std::string src,
 int Point2AffinePoint(Point src, affpoint* dst);
 int AffinePoint2String(const affpoint& point, std::string* dst);
 affpoint PointNeg(affpoint src);
-
+int Sm4EncBlock(block* src, int length, block* dst, unsigned char key[16]);
+int Prf(unsigned char *seed, int length, unsigned char *dst);
+int Small8toChar(small src[DIG_LEN], unsigned char *dst);
 
 }  // namespace PSI

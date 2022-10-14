@@ -48,7 +48,7 @@ class PsiReceiver {
     const ui32& height,
     const ui32& logHeight,
     const ui32& width,
-    std::vector<std::string>& receiverSet,
+    std::vector<block>& receiverSet,
     const ui32& hashLengthInBytes,
     const ui32& h1LengthInBytes,
     const ui32& bucket1,

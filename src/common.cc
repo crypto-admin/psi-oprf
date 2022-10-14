@@ -119,5 +119,45 @@ affpoint PointNeg(affpoint src) {
   return fu;
 }
 
+int Sm4EncBlock(block* src, int length, block* dst, unsigned char key[16]) {
+    // length is block num
+  sm4_context ctx;
+  sm4_setkey_enc(&ctx, key);
+  for (int blockNum = 0; blockNum < length; blockNum++) {
+    sm4_crypt_ecb(&ctx, 16, src[blockNum].msg, dst[blockNum].msg);
+  }
+  return 0;
+}
+
+int Prf(unsigned char *seed, int length, unsigned char *dst) {
+    // 使用SM3， 将seed扩展为length长度;
+    int blockNum = length / 32;  // 32 is sm3 out len;
+    int left = length % 32;
+    
+    unsigned char hashOut[32];
+    unsigned char hashIn[32];
+    memcpy(hashIn, seed, 32);
+
+    for (int i = 0; i < blockNum; ++i) {
+        SM3_Hash(hashIn, 32, hashOut, 32);
+        memcpy(dst+i*32, hashOut, 32);
+        memcpy(hashIn, hashOut, 32);
+    }
+    SM3_Hash(hashIn, 32, hashOut, 32);
+    memcpy(dst + 32*blockNum, hashOut, left);
+
+    return 0;
+}
+
+int Small8toChar(small src[DIG_LEN], unsigned char *dst) {
+    for (int i = 0; i < DIG_LEN; i++) {
+        dst[i*4] = (u8)((src[i] >> 24) & 0xff);
+        dst[i*4+1] = (u8)(src[i] >> 16 & 0xff);
+        dst[i*4+2] = (u8)(src[i] >> 8 & 0xff);
+        dst[i*4+3] = (u8)(src[i] & 0xff);
+    }
+
+    return 0;
+}
 
 }  // namespace PSI
