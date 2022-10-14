@@ -37,7 +37,7 @@ int debug = 1;
 // Logic and data behind the server's behavior.
 class PsiServiceImpl final : public Psi::Service {
   Status SendPoint(ServerContext* context,
-                  ServerReaderWriter<Point, Point>* stream) override { 
+                  ServerReaderWriter<Point, Point>* stream) override {
     if (debug != 0) {
       for (int loop = 0; loop < 100; loop++) {
         Point request;
@@ -49,7 +49,6 @@ class PsiServiceImpl final : public Psi::Service {
         xa.set_pointset(reply);
         stream->Write(xa);
       }
-  
     }
 
 

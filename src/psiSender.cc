@@ -8,7 +8,6 @@
 #include <string>
 #include <random>
 #include "psiSender.h"
-#include "common.h"
 
 
 namespace PSI {
@@ -19,7 +18,7 @@ psiparams onlineparam = {
   1024*1024,
   1024*1024,
   20,
-  60,
+  10,
   32,
   32,
   256,
@@ -113,8 +112,6 @@ int BatchOTSender(ClientReaderWriter<Point, Point>* stream,
   Point batchB;
   batchB.set_pointset(randBSetString);
   stream->Write(batchB);
-  // compute k_c
-
 
   return 0;
 }
@@ -143,12 +140,15 @@ void PsiSendRun(
   GetRandom(width, choiceB);
   for (int i=0; i < width; i++) {
     choiceB[i] = static_cast<int>(choiceB[i]) % 2;
-    // std::cout << "choice i = " << int(choiceB[i]) << std::endl;
+    std::cout << "choice i = " << int(choiceB[i]) << std::endl;
   }
   std::vector<affpoint> kc;
   auto res = BatchOTSender(stream, width, choiceB, kc);
   std::cout << "sender batch ot kc size = " << kc.size() << std::endl;
-
+  for (int i = 0; i < kc.size(); i++) {
+    PrintAffPoint(kc[i]);
+    std::cout << std::endl;
+  }
 }
 
 int PsiSend(ClientReaderWriter<Point, Point>* stream) {

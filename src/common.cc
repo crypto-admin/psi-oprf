@@ -31,6 +31,14 @@ small P[DIG_LEN] = {
     0xFFFFFFFF, 0xFFFFFFFF, 0x00000000, 0xFFFFFFFF,
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE };
 
+
+int PrintAffPoint(affpoint src) {
+    std::string dst = "";
+    AffinePoint2String(src, &dst);
+    std::cout << dst << std::endl;
+    return 0;
+}
+
 int GetRandom(int length, unsigned char * dst) {
   std::random_device rd;
   std::default_random_engine eng(rd());
@@ -100,10 +108,14 @@ int Point2AffinePoint(Point src, affpoint* dst) {
 
 affpoint PointNeg(affpoint src) {
   affpoint fu;
+  small  temp[DIG_LEN];
+  sub(temp, P, src.y);
   for (int i = 0; i < DIG_LEN; i++) {
     fu.x[i] = src.x[i];
-    fu.y[i] = P[i] -src.y[i];
+    fu.y[i] = temp[i];
   }
+
+
   return fu;
 }
 

@@ -29,7 +29,7 @@
 namespace PSI {
 
 int param_size = 9;
-psiparams onlineparam = {1024, 1024*1024, 1024*1024, 20, 60, 32, 32, 256, 256};
+psiparams onlineparam = {1024, 1024*1024, 1024*1024, 20, 10, 32, 32, 256, 256};
 
 
 
@@ -92,7 +92,7 @@ int InitData(std::string filePath, std::vector<string>& src) {
 int ComputeKey(std::string src,
       std::vector<affpoint> randASet,
       int width,
-      std::vector<block32> scalarSet,
+      std::vector<block32> scalarASet,
       std::vector<affpoint>& k0,
       std::vector<affpoint>& k1) {
   // compute k0, k1; src is B, string
@@ -105,18 +105,18 @@ int ComputeKey(std::string src,
     affpoint k;
     affpoint temp0;
     affpoint temp1;
+    affpoint temp2;
     B.set_pointset(pointSet[i]);
     Point2AffinePoint(B, &k);  // 有重复代码，优化！
-    pointmul(&temp0, &k, scalarSet[i].rand);
+    pointmul(&temp0, &k, scalarASet[i].rand);  // a*B
     k0.push_back(temp0);
-    auto fuA = PointNeg(randASet[i]);
+    auto fuA = PointNeg(randASet[i]);  // fuA = -A
     pointadd(&temp1, &k, &fuA);
-    pointmul(&temp1, &temp1, scalarSet[i].rand);
-    k1.push_back(temp1);
+    pointmul(&temp2, &temp1, scalarASet[i].rand);
+    k1.push_back(temp2);
   }
 
   return 0;
-
 }
 
 int BatchOT(ServerReaderWriter<Point, Point>* stream,
@@ -182,6 +182,11 @@ void PsiReceiver::run(
     std::vector<affpoint> k1;
     BatchOT(stream, width, k0, k1);
     std::cout << "server BatchOT k0 size = " << k0.size() << std::endl;
+    for (int i = 0; i < k0.size(); i++) {
+      PrintAffPoint(k0[i]);
+      PrintAffPoint(k1[i]);
+      std::cout << "-------------------------------" << std::endl;
+    }
   }
 
 

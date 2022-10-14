@@ -48,6 +48,7 @@ struct psiparams {
     ui32 bucket2;
 };
 
+int PrintAffPoint(affpoint src);
 int GetRandom(int length, unsigned char * dst);
 int GetRandomUint32(int length, ui32* dst);
 int StringSplit(const std::string src,

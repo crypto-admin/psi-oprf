@@ -55,7 +55,7 @@ typedef projpoint *point;
 void basepointmul(epoint p, big n);
 void pointadd(epoint r, epoint p, epoint q);
 void pointmul(epoint p, epoint q, big n);
-void modinv(big x, big y, big p);
+void sub(big w, big u, big v);
 
 
 /***************************************************
