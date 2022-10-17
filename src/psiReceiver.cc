@@ -21,6 +21,8 @@
 #include <sstream>
 #include <memory>
 #include <random>
+#include <unordered_map>
+#include <utility>
 
 #include "psiReceiver.h"
 #include "common.h"
@@ -317,7 +319,46 @@ void PsiReceiver::run(
         }
       }
     }
-  }
+
+    std::cout << "Receiver matrix sent and transposed hash input computed" << std::endl;
+
+		/////////////////// Compute hash outputs ///////////////////////////
+    // RandomOracle H(hashLengthInBytes);
+    // u8 hashOutput[sizeof(block)];
+    u8 hashOutput[hashLengthInBytes];
+    std::unordered_map<uint64_t, std::vector<std::pair<block, ui32>>> allHashes;
+
+    u8* hashInputs[bucket2];
+    for (auto i = 0; i < bucket2; ++i) {
+      hashInputs[i] = new u8[widthInBytes];
+    }
+
+    for (auto low = 0; low < receiverSize; low += bucket2) {
+      auto up = low + bucket2 < receiverSize ? low + bucket2 : receiverSize;
+
+      for (auto j = low; j < up; ++j) {
+        memset(hashInputs[j - low], 0, widthInBytes);
+      }
+
+      for (auto i = 0; i < width; ++i) {
+        for (auto j = low; j < up; ++j) {
+          hashInputs[j - low][i >> 3] |= (u8)((bool)(transHashInputs[i][j >> 3] & (1 << (j & 7)))) << (i & 7);
+        }
+      }
+
+      for (auto j = low; j < up; ++j) {
+        // H.Reset();
+        // H.Update(hashInputs[j - low], widthInBytes);
+        // H.Final(hashOutput);
+        SM3_Hash(hashInputs[j - low], widthInBytes, hashOutput, hashLengthInBytes);
+        allHashes[*(uint64_t*)(hashOutput)].push_back(std::make_pair(*(block*)hashOutput, j));
+      }
+    }
+
+    std::cout << "Receiver hash outputs computed\n";
+
+
+}
 
 
 int PsiReceive(ServerReaderWriter<Point, Point>* stream) {

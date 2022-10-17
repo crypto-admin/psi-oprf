@@ -173,7 +173,130 @@ void PsiSendRun(
     std::cout << int(aesKey[i]) << std::endl;
   }
 
+  block* sendSet = new block[senderSize];
+  block* aesInput = new block[senderSize];
+  block* aesOutput = new block[senderSize];
+  
+  // RandomOracle H1(h1LengthInBytes);  // 32, 256bit
+  u8 h1Output[h1LengthInBytes];
 
+  for (auto i = 0; i < senderSize; ++i) {
+    // H1.Reset();
+    // H1.Update((u8*)(senderSet.data() + i), sizeof(block));
+    // H1.Final(h1Output);   // H1(x)
+    SM3_Hash((u8*)(senderSet.data() + i), sizeof(block), h1Output, 32);
+
+    aesInput[i] = *(block*)h1Output; // 做了截断, 前16字节；
+    sendSet[i] = *(block*)(h1Output + sizeof(block)); // 后16字节;
+  }
+
+  // commonAes.ecbEncBlocks(aesInput, senderSize, aesOutput);
+  Sm4EncBlock(aesInput, senderSize, aesOutput, aesKey);
+
+  for (auto i = 0; i < senderSize; ++i) {
+      for (auto loop = 0; loop < 16; ++loop) {
+        sendSet[i].msg[loop] ^= aesOutput[i].msg[loop];
+      }
+  }
+
+  std::cout << "Sender set transformed." << std::endl;
+  for (int wLeft = 0; wLeft < width; wLeft += widthBucket1) {
+    auto wRight = wLeft + widthBucket1 < width ? wLeft + widthBucket1 : width;
+    int w = wRight - wLeft;  // mostly == withBucket1
+
+    for (auto low = 0; low < senderSize; low += bucket1) {
+      auto up = low + bucket1 < senderSize ? low + bucket1 : senderSize;
+      // 每次处理256行; 如果一次处理sendersize行，太大了，赋值时间耗时长
+      // commonAes.ecbEncBlocks(sendSet + low, up - low, randomLocations);
+      Sm4EncBlock(sendSet + low, up - low, randomLocations, aesKey);
+      // randomLocations is output;
+      for (auto i = 0; i < w; ++i) {
+        for (auto j = low; j < up; ++j) {
+          memcpy(transLocations[i] + j * locationInBytes, (u8*)(randomLocations + (j - low)) + i * locationInBytes, locationInBytes);
+        }
+      }
+    }
+
+    //////////////// Extend OTs and compute matrix C ///////////////////
+    u8* recvMatrix;
+    recvMatrix = new u8[heightInBytes];
+
+    for (auto i = 0; i < w; ++i) {
+      // PRNG prng(otMessages[i + wLeft]);
+      // prng.get(matrixC[i], heightInBytes);
+      auto kcpoint = kc[i+wLeft];  // affpoint
+      unsigned char seed[32];
+      unsigned char* rcExtend = new unsigned char[heightInBytes];
+      Small8toChar(kcpoint.x, seed);
+      Prf(seed, heightInBytes, rcExtend);
+      for (ui32 k = 0; k < heightInBytes; k++) {
+        matrixC[i][k] = rcExtend[k];
+      }
+      // ch.recv(recvMatrix, heightInBytes);
+      Point matrixCol;
+      stream->Read(&matrixCol);  // heightInBytes
+      auto matrixColString = matrixCol.pointset();
+      char arrCol[heightInBytes+1];
+      strcpy(arrCol, matrixColString.c_str());
+      memcpy(recvMatrix, (unsigned char*)arrCol, heightInBytes);
+      if (choiceB[i + wLeft]) {
+        for (auto j = 0; j < heightInBytes; ++j) {
+          matrixC[i][j] ^= recvMatrix[j];
+        }
+      }
+    }
+    ///////////////// Compute hash inputs (transposed) /////////////////////
+    for (auto i = 0; i < w; ++i) {
+      for (auto j = 0; j < senderSize; ++j) {  // H2 input == transHashInputs
+        auto location = (*(ui32*)(transLocations[i] + j * locationInBytes)) & shift;
+        transHashInputs[i + wLeft][j >> 3] |= (u8)((bool)(matrixC[i][location >> 3] & (1 << (location & 7)))) << (j & 7);
+        // 按位或;跟papser的连接不同
+      }
+    }
+  }
+  std::cout << "Sender transposed hash input computed\n";
+
+  /////////////////// Compute hash outputs ///////////////////////////
+  // RandomOracle H(hashLengthInBytes); // SM3
+  // u8 hashOutput[sizeof(block)]; // think
+  u8 hashOutput[hashLengthInBytes];
+  u8* hashInputs[bucket2];
+
+  for (auto i = 0; i < bucket2; ++i) {
+    hashInputs[i] = new u8[widthInBytes];
+  }
+
+  for (auto low = 0; low < senderSize; low += bucket2) {
+    auto up = low + bucket2 < senderSize ? low + bucket2 : senderSize;
+
+    for (auto j = low; j < up; ++j) {
+      memset(hashInputs[j - low], 0, widthInBytes);
+    }
+
+    for (auto i = 0; i < width; ++i) {
+      for (auto j = low; j < up; ++j) {
+        hashInputs[j - low][i >> 3] |= (u8)((bool)(transHashInputs[i][j >> 3] & (1 << (j & 7)))) << (i & 7);
+      }
+    }
+
+    u8* sentBuff = new u8[(up - low) * hashLengthInBytes];
+
+    for (auto j = low; j < up; ++j) {
+      // H.Reset();
+      // H.Update(hashInputs[j - low], widthInBytes);
+      // H.Final(hashOutput);
+      SM3_Hash(hashInputs[j-low], widthInBytes, hashOutput, hashLengthInBytes);
+      memcpy(sentBuff + (j - low) * hashLengthInBytes, hashOutput, hashLengthInBytes);
+    }
+
+    // ch.asyncSend(sentBuff, (up - low) * hashLengthInBytes);
+    Point hashSendPoint;
+    std::string hashSendString(reinterpret_cast<char*>(sentBuff), (up - low) * hashLengthInBytes);
+    hashSendPoint.set_pointset(hashSendString);
+    stream->Write(hashSendPoint);
+  }
+
+  std::cout << "Sender hash outputs computed and sent" << std::endl;
 
 }
 
