@@ -122,7 +122,7 @@ void PsiSendRun(
   auto heightInBytes = (height + 7) / 8;
   auto widthInBytes = (width + 7) / 8;
   auto locationInBytes = (logHeight + 7) / 8;
-  auto receiverSizeInBytes = (receiverSize + 7) / 8;
+  auto senderSizeInBytes = (senderSize + 7) / 8;
   auto shift = (1 << logHeight) - 1;
   auto widthBucket1 = sizeof(block) / locationInBytes;  // 16/3 = 5
 
@@ -136,10 +136,45 @@ void PsiSendRun(
   std::vector<affpoint> kc;
   auto res = BatchOTSender(stream, width, choiceB, kc);
   std::cout << "sender batch ot kc size = " << kc.size() << std::endl;
-  for (int i = 0; i < kc.size(); i++) {
-    PrintAffPoint(kc[i]);
-    std::cout << std::endl;
+  // for (int i = 0; i < kc.size(); i++) {
+  //   PrintAffPoint(kc[i]);
+  //   std::cout << std::endl;
+  // }
+
+  /** PSI process **/
+  u8* transLocations[widthBucket1];
+  for (auto i = 0; i < widthBucket1; ++i) {
+    transLocations[i] = new u8[senderSize * locationInBytes + sizeof(ui32)];
   }
+
+  block randomLocations[bucket1];
+  u8* matrixC[widthBucket1];  // widthBucket1 是矩阵C的列数
+  for (auto i = 0; i < widthBucket1; ++i) {
+    matrixC[i] = new u8[heightInBytes];
+    // C 中每个元素都是大小为heightInbytes的向量，且初始化为0;
+  }
+
+  u8* transHashInputs[width];
+  // hash的个数, 也看做一个矩阵，列宽width, 行宽senderSizeInBytes;
+  for (auto i = 0; i < width; ++i) {
+    transHashInputs[i] = new u8[senderSizeInBytes];
+    memset(transHashInputs[i], 0, senderSizeInBytes);
+  }
+
+  /////////// Transform input /////////////////////
+  Point aesKeyPoint;
+  stream->Read(&aesKeyPoint);
+  auto key = aesKeyPoint.pointset();
+  char arr[key.length()+1];
+  unsigned char aesKey[16];
+  strcpy(arr, key.c_str());
+  memcpy(aesKey, (unsigned char*)arr, 16);
+  for (int i = 0; i < 16; i++) {
+    std::cout << int(aesKey[i]) << std::endl;
+  }
+
+
+
 }
 
 int PsiSend(ClientReaderWriter<Point, Point>* stream) {

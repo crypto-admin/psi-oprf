@@ -210,11 +210,15 @@ void PsiReceiver::run(
     }
     unsigned char aesKey[16];
     GetRandom(16, aesKey);
+    for (int i = 0; i < 16; i++) {
+      std::cout << int(aesKey[i]) << std::endl;
+    }
     sm4_context ctx;
     sm4_setkey_enc(&ctx, aesKey);
     Point key;
-    key.set_pointset((char*)aesKey);
-    // stream->Write(key);  // TODO:open it
+    std::string keystring(reinterpret_cast<char*>(aesKey), 16);
+    key.set_pointset(keystring);
+    stream->Write(key);  // TODO:open it
 
     block* recvSet = new block[receiverSize];
     block* aesInput = new block[receiverSize];
@@ -244,43 +248,38 @@ void PsiReceiver::run(
 
     for (auto wLeft = 0; wLeft < width; wLeft += widthBucket1) {
 			auto wRight = wLeft + widthBucket1 < width ? wLeft + widthBucket1 : width;
-			auto w = wRight - wLeft;
+      auto w = wRight - wLeft;
 
-			
-			//////////// Compute random locations (transposed) ////////////////
+      //////////// Compute random locations (transposed) ////////////////
+      for (auto low = 0; low < receiverSize; low += bucket1) {
 
-			for (auto low = 0; low < receiverSize; low += bucket1) {
-			
-				auto up = low + bucket1 < receiverSize ? low + bucket1 : receiverSize;
+        auto up = low + bucket1 < receiverSize ? low + bucket1 : receiverSize;
 
         Sm4EncBlock(recvSet + low, up - low, randomLocations, aesKey);
-					
-				for (auto i = 0; i < w; ++i) {
-					for (auto j = low; j < up; ++j) {
-						memcpy(transLocations[i] + j * locationInBytes, (u8*)(randomLocations + (j - low)) + i * locationInBytes, locationInBytes);
-					}
-				}
-			}
-		
-		
 
-			//////////// Compute matrix Delta /////////////////////////////////
-			
-			for (auto i = 0; i < widthBucket1; ++i) {
-				memset(matrixDelta[i], 255, heightInBytes);  // D中每个元素都是1, 8个1合并为1个byte
-			}
-			
-			for (auto i = 0; i < w; ++i) {
-				for (auto j = 0; j < receiverSize; ++j) {
-					auto location = (*(ui32*)(transLocations[i] + j * locationInBytes)) & shift;
-					
-					matrixDelta[i][location >> 3] &= ~(1 << (location & 7));
-				}
-			}
+        for (auto i = 0; i < w; ++i) {
+          for (auto j = low; j < up; ++j) {
+            memcpy(transLocations[i] + j * locationInBytes, (u8*)(randomLocations + (j - low)) + i * locationInBytes, locationInBytes);
+          }
+        }
+      }
 
-			//////////////// Compute matrix A & sent matrix ///////////////////////
+      //////////// Compute matrix Delta /////////////////////////////////
 
-			u8* sentMatrix[w];
+      for (auto i = 0; i < widthBucket1; ++i) {
+        memset(matrixDelta[i], 255, heightInBytes);  // D中每个元素都是1, 8个1合并为1个byte
+      }
+
+      for (auto i = 0; i < w; ++i) {
+        for (auto j = 0; j < receiverSize; ++j) {
+          auto location = (*(ui32*)(transLocations[i] + j * locationInBytes)) & shift;
+          matrixDelta[i][location >> 3] &= ~(1 << (location & 7));
+        }
+      }
+
+      //////////////// Compute matrix A & sent matrix ///////////////////////
+
+      u8* sentMatrix[w];
 
       for (auto i = 0; i < w; ++i) {
         // PRNG prng(otMessages[i + wLeft][0]);
@@ -301,26 +300,23 @@ void PsiReceiver::run(
         for (auto j = 0; j < heightInBytes; ++j) {
           sentMatrix[i][j] ^= matrixA[i][j] ^ matrixDelta[i][j];
         }
-        std::string send((char*)sentMatrix[i], heightInBytes); // Must test data loss;
+        std::string send(reinterpret_cast<char*>(sentMatrix[i]), heightInBytes);
+        // Must test data loss;
         Point SendPoint;
         SendPoint.set_pointset(send);
         stream->Write(SendPoint);
         // ch.asyncSend(sentMatrix[i], heightInBytes);
-			}
-			
-			///////////////// Compute hash inputs (transposed) /////////////////////
-	
-			for (auto i = 0; i < w; ++i) {
-				for (auto j = 0; j < receiverSize; ++j) {
-					auto location = (*(ui32*)(transLocations[i] + j * locationInBytes)) & shift;
-          auto  temp = matrixA[i][location >> 3] & (1 << (location & 7));
-					transHashInputs[i + wLeft][j >> 3] |= (u8)(bool)temp << (j & 7);
-				}
-			}
-			
-		}
-	
+      }
 
+      ///////////////// Compute hash inputs (transposed) /////////////////////
+      for (auto i = 0; i < w; ++i) {
+        for (auto j = 0; j < receiverSize; ++j) {
+          auto location = (*(ui32*)(transLocations[i] + j * locationInBytes)) & shift;
+          auto  temp = matrixA[i][location >> 3] & (1 << (location & 7));
+          transHashInputs[i + wLeft][j >> 3] |= (u8)(bool)temp << (j & 7);
+        }
+      }
+    }
   }
 
 
