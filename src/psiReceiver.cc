@@ -357,6 +357,41 @@ void PsiReceiver::run(
 
     std::cout << "Receiver hash outputs computed\n";
 
+    ///////////////// Receive hash outputs from sender and compute PSI ///////////////////
+    u8* recvBuff = new u8[bucket2 * hashLengthInBytes];
+    auto psi = 0;
+		
+    for (auto low = 0; low < senderSize; low += bucket2) {
+      auto up = low + bucket2 < senderSize ? low + bucket2 : senderSize;
+
+      // ch.recv(recvBuff, (up - low) * hashLengthInBytes);
+      Point recvBuffPoint;
+      stream->Read(&recvBuffPoint);
+      auto recvBufString = recvBuffPoint.pointset();
+      char arr[recvBufString.length()+1];
+      strcpy(arr, recvBufString.c_str());
+      memcpy(recvBuff, (unsigned char*)arr, (up - low) * hashLengthInBytes);
+
+
+      for (auto idx = 0; idx < up - low; ++idx) {
+        uint64_t mapIdx = *(uint64_t*)(recvBuff + idx * hashLengthInBytes);
+
+        auto found = allHashes.find(mapIdx);
+        if (found == allHashes.end()) continue;
+        
+        for (auto i = 0; i < found->second.size(); ++i) {
+          if (memcmp(&(found->second[i].first), recvBuff + idx * hashLengthInBytes, hashLengthInBytes) == 0) {
+            ++psi;
+            break;
+          }
+        }
+      }
+    }
+
+    if (psi == 100) {
+      std::cout << "Receiver intersection computed - correct!\n";
+    }
+    std::cout << "psi server end." << std::endl;
 
 }
 
