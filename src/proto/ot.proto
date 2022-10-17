@@ -24,5 +24,5 @@ service Psi {
 
 // The request message containing the Alice/Bob's ECC Point.
 message Point {
-  string pointSet = 1;
+  bytes pointSet = 1;
 }
