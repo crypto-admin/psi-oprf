@@ -31,11 +31,9 @@
 namespace PSI {
 
 int param_size = 9;
-psiparams onlineparam = {1024, 1024, 1024, 10, 10, 32, 32, 256, 256};
+psiparams onlineparam = {1024, 1024, 1024, 10, 60, 32, 32, 256, 256};
 
-
-
-    // read server params from config file, as csv, json..
+// read server params from config file, as csv, json..
 int Parserparam() {
   string config;
   ifstream config_file("src/config/serverConfig.csv", ios::in);
@@ -62,7 +60,7 @@ int Parserparam() {
     onlineparam.bucket2 = param_temp[8];
   } else {
     return 2;  // param size error;
-  } 
+  }
   return 0;
 }
 
@@ -80,16 +78,6 @@ int InitData(std::string filePath, std::vector<string>& src) {
     index++;
   }
 }
-
-
-
-// int GetRandAOT1out2(epoint p, ui32* randa) { // 外部申请空间;
-//   GetRandomUint32(8, randa);
-//   basepointmul(p, randa);
-
-//   return 0;
-// }
-
 
 int ComputeKey(std::string src,
       std::vector<affpoint> randASet,
@@ -143,11 +131,11 @@ int BatchOT(ServerReaderWriter<Point, Point>* stream,
   Point send;
   send.set_pointset(randASetString);
   stream->Write(send);
-  std::cout << "server send A to client." << std::endl;
+  // std::cout << "server send A to client." << std::endl;
   // Receiver B from Bob
   Point batchB;
   stream->Read(&batchB);
-  std::cout << "server got B from client" << std::endl;
+  // std::cout << "server got B from client" << std::endl;
   // compute k0, k1
   // k0 = aB
   // k1 = a(B-A)
@@ -189,6 +177,7 @@ void PsiReceiver::run(
     //   PrintAffPoint(k1[i]);
     //   std::cout << "-------------------------------" << std::endl;
     // }  // Test Batch OT correctness
+
     /****** PSI batch compute Matrix A/B ******/
     u8* matrixA[widthBucket1];  // 每次处理5列
     u8* matrixDelta[widthBucket1];
@@ -196,13 +185,13 @@ void PsiReceiver::run(
       matrixA[i] = new u8[heightInBytes];
       matrixDelta[i] = new u8[heightInBytes];
     }
-    
+
 
     u8* transLocations[widthBucket1];
     for (auto i = 0; i < widthBucket1; ++i) {
       transLocations[i] = new u8[receiverSize * locationInBytes + sizeof(ui32)];
     }
-	
+
     block randomLocations[bucket1];
 
     u8* transHashInputs[width];
@@ -215,8 +204,7 @@ void PsiReceiver::run(
     for (int i = 0; i < 16; i++) {
       std::cout << int(aesKey[i]) << std::endl;
     }
-    sm4_context ctx;
-    sm4_setkey_enc(&ctx, aesKey);
+
     Point key;
     std::string keystring(reinterpret_cast<char*>(aesKey), 16);
     key.set_pointset(keystring);
@@ -225,7 +213,7 @@ void PsiReceiver::run(
     block* recvSet = new block[receiverSize];
     block* aesInput = new block[receiverSize];
     block* aesOutput = new block[receiverSize];
-    
+
     u8 h1Output[h1LengthInBytes];
 
     for (auto i = 0; i < receiverSize; ++i) {
@@ -244,17 +232,16 @@ void PsiReceiver::run(
       for (auto loop = 0; loop < 16; ++loop) {
         recvSet[i].msg[loop] ^= aesOutput[i].msg[loop];
       }
-		}
+    }
     //
     std::cout << "Receiver set transstformed" << std::endl;
 
     for (auto wLeft = 0; wLeft < width; wLeft += widthBucket1) {
-			auto wRight = wLeft + widthBucket1 < width ? wLeft + widthBucket1 : width;
+      auto wRight = wLeft + widthBucket1 < width ? wLeft + widthBucket1 : width;
       auto w = wRight - wLeft;
 
       //////////// Compute random locations (transposed) ////////////////
       for (auto low = 0; low < receiverSize; low += bucket1) {
-
         auto up = low + bucket1 < receiverSize ? low + bucket1 : receiverSize;
 
         Sm4EncBlock(recvSet + low, up - low, randomLocations, aesKey);
@@ -269,7 +256,7 @@ void PsiReceiver::run(
       //////////// Compute matrix Delta /////////////////////////////////
 
       for (auto i = 0; i < widthBucket1; ++i) {
-        memset(matrixDelta[i], 255, heightInBytes);  // D中每个元素都是1, 8个1合并为1个byte
+        memset(matrixDelta[i], 255, heightInBytes);
       }
 
       for (auto i = 0; i < w; ++i) {
@@ -324,8 +311,8 @@ void PsiReceiver::run(
 
 		/////////////////// Compute hash outputs ///////////////////////////
     // RandomOracle H(hashLengthInBytes);
-    // u8 hashOutput[sizeof(block)];
-    u8 hashOutput[hashLengthInBytes];
+    u8 hashOutput[sizeof(block)];
+    // u8 hashOutput[hashLengthInBytes];
     std::unordered_map<uint64_t, std::vector<std::pair<block, ui32>>> allHashes;
 
     u8* hashInputs[bucket2];
@@ -350,7 +337,7 @@ void PsiReceiver::run(
         // H.Reset();
         // H.Update(hashInputs[j - low], widthInBytes);
         // H.Final(hashOutput);
-        SM3_Hash(hashInputs[j - low], widthInBytes, hashOutput, hashLengthInBytes);
+        SM3_Hash(hashInputs[j - low], widthInBytes, hashOutput, sizeof(block));
         allHashes[*(uint64_t*)(hashOutput)].push_back(std::make_pair(*(block*)hashOutput, j));
       }
     }
@@ -390,6 +377,8 @@ void PsiReceiver::run(
 
     if (psi == 100) {
       std::cout << "Receiver intersection computed - correct!\n";
+    } else {
+      std::cout << "psi result err, psi joined num = " << psi <<  std::endl;
     }
     std::cout << "psi server end." << std::endl;
 
@@ -401,15 +390,7 @@ int PsiReceive(ServerReaderWriter<Point, Point>* stream) {
   std::vector<block> serverData;
   // string srcFilePath = "src/data/serverData.csv";
   // int res = InitData(srcFilePath, serverData);
-  unsigned char hashSrc[16];
-  unsigned char hashDst[16];
-  for (int i=0; i < onlineparam.receiverSize; i++) {
-    GetRandom(16, hashSrc);
-    SM3_Hash(hashSrc, 16, hashDst, 16);
-    block temp;
-    memcpy(temp.msg, hashDst, 16);
-    serverData.push_back(temp);
-  }
+  auto res = MockData(&serverData, onlineparam.receiverSize);
 
   PsiReceiver r;
   r.run(stream, \

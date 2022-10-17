@@ -66,5 +66,7 @@ affpoint PointNeg(affpoint src);
 int Sm4EncBlock(block* src, int length, block* dst, unsigned char key[16]);
 int Prf(unsigned char *seed, int length, unsigned char *dst);
 int Small8toChar(small src[DIG_LEN], unsigned char *dst);
+int PrintBlock(block src);
+int MockData(std::vector<block>* src, int dataSize);
 
 }  // namespace PSI

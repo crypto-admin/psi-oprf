@@ -13,7 +13,7 @@
 namespace PSI {
 
 const int param_size = 9;
-psiparams onlineparam = {1024, 1024, 1024, 10, 10, 32, 32, 256, 256};
+psiparams onlineparam = {1024, 1024, 1024, 10, 60, 32, 32, 256, 256};
 
 
 int Parserparam(std::string configPath ) {
@@ -113,7 +113,7 @@ void PsiSendRun(
       const ui32& height,
       const ui32& logHeight,
       const ui32& width,
-      std::vector<std::string>& senderSet,
+      std::vector<block>& senderSet,
       const ui32& hashLengthInBytes,
       const ui32& h1LengthInBytes,
       const ui32& bucket1,
@@ -258,8 +258,8 @@ void PsiSendRun(
 
   /////////////////// Compute hash outputs ///////////////////////////
   // RandomOracle H(hashLengthInBytes); // SM3
-  // u8 hashOutput[sizeof(block)]; // think
-  u8 hashOutput[hashLengthInBytes];
+  u8 hashOutput[sizeof(block)]; // think
+  // u8 hashOutput[hashLengthInBytes];
   u8* hashInputs[bucket2];
 
   for (auto i = 0; i < bucket2; ++i) {
@@ -285,29 +285,26 @@ void PsiSendRun(
       // H.Reset();
       // H.Update(hashInputs[j - low], widthInBytes);
       // H.Final(hashOutput);
-      SM3_Hash(hashInputs[j-low], widthInBytes, hashOutput, hashLengthInBytes);
+      SM3_Hash(hashInputs[j-low], widthInBytes, hashOutput, sizeof(block));
       memcpy(sentBuff + (j - low) * hashLengthInBytes, hashOutput, hashLengthInBytes);
     }
 
     // ch.asyncSend(sentBuff, (up - low) * hashLengthInBytes);
     Point hashSendPoint;
-    std::string hashSendString(reinterpret_cast<char*>(sentBuff), (up - low) * hashLengthInBytes);
+    std::string hashSendString(reinterpret_cast<char*>(sentBuff), (up-low)*hashLengthInBytes);
     hashSendPoint.set_pointset(hashSendString);
     stream->Write(hashSendPoint);
   }
 
   std::cout << "Sender hash outputs computed and sent" << std::endl;
-
 }
 
 int PsiSend(ClientReaderWriter<Point, Point>* stream) {
   Parserparam("src/config/clientConfig.csv");
-  std::vector<std::string> clientData;
+  std::vector<block> clientData;
   std::string srcFilePath = "src/data/client.csv";
   // int res = InitData(srcFilePath, clientData);
-  for (int i=0; i < onlineparam.width; i++) {
-    clientData.push_back(std::to_string(i+2));
-  }
+  auto res = MockData(&clientData, onlineparam.senderSize);
 
   // PsiSender sender;
   PsiSendRun(stream, \
