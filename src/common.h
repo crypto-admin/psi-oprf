@@ -34,7 +34,7 @@ namespace PSI {
 #define u8  unsigned char
 
 struct block {
-    unsigned char msg[16];
+    unsigned char msg[16] = {0};
 };
 
 struct block32 {

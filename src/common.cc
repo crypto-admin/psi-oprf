@@ -144,7 +144,7 @@ int Prf(unsigned char *seed, int length, unsigned char *dst) {
         memcpy(hashIn, hashOut, 32);
     }
     SM3_Hash(hashIn, 32, hashOut, 32);
-    memcpy(dst + 32*blockNum, hashOut, left);
+    if (left) memcpy(dst + 32*blockNum, hashOut, left);
 
     return 0;
 }

@@ -151,6 +151,7 @@ void PsiSendRun(
   u8* matrixC[widthBucket1];  // widthBucket1 是矩阵C的列数
   for (auto i = 0; i < widthBucket1; ++i) {
     matrixC[i] = new u8[heightInBytes];
+    memset(matrixC[i], 0, heightInBytes);
     // C 中每个元素都是大小为heightInbytes的向量，且初始化为0;
   }
 
@@ -169,9 +170,9 @@ void PsiSendRun(
   unsigned char aesKey[16];
   strcpy(arr, key.c_str());
   memcpy(aesKey, (unsigned char*)arr, 16);
-  for (int i = 0; i < 16; i++) {
-    std::cout << int(aesKey[i]) << std::endl;
-  }
+  // for (int i = 0; i < 16; i++) {
+  //   std::cout << int(aesKey[i]) << std::endl;
+  // }
 
   block* sendSet = new block[senderSize];
   block* aesInput = new block[senderSize];
@@ -179,7 +180,7 @@ void PsiSendRun(
   
   // RandomOracle H1(h1LengthInBytes);  // 32, 256bit
   u8 h1Output[h1LengthInBytes];
-
+  std::cout << "-------------aes test.. " << std::endl;
   for (auto i = 0; i < senderSize; ++i) {
     // H1.Reset();
     // H1.Update((u8*)(senderSet.data() + i), sizeof(block));
@@ -187,11 +188,15 @@ void PsiSendRun(
     SM3_Hash((u8*)(senderSet.data() + i), sizeof(block), h1Output, 32);
 
     aesInput[i] = *(block*)h1Output; // 做了截断, 前16字节；
-    sendSet[i] = *(block*)(h1Output + sizeof(block)); // 后16字节;
+    // PrintBlock(aesInput[i]);
+    sendSet[i] = *(block*)(h1Output + sizeof(block));  // 后16字节;
   }
 
   // commonAes.ecbEncBlocks(aesInput, senderSize, aesOutput);
   Sm4EncBlock(aesInput, senderSize, aesOutput, aesKey);
+  // for (int i = 0; i < 100; i++) {
+  //   PrintBlock(aesOutput[i]);
+  // }
 
   for (auto i = 0; i < senderSize; ++i) {
       for (auto loop = 0; loop < 16; ++loop) {
@@ -225,8 +230,12 @@ void PsiSendRun(
       // PRNG prng(otMessages[i + wLeft]);
       // prng.get(matrixC[i], heightInBytes);
       auto kcpoint = kc[i+wLeft];  // affpoint
-      unsigned char seed[32];
+      unsigned char *seed = new unsigned char[32];
       unsigned char* rcExtend = new unsigned char[heightInBytes];
+      // for (int nn = 0; nn < 8; nn++) {
+      //   std::cout << kcpoint.x[nn];
+      // }
+      // std::cout << "kcpoint test=========================" << std::endl;
       Small8toChar(kcpoint.x, seed);
       Prf(seed, heightInBytes, rcExtend);
       for (ui32 k = 0; k < heightInBytes; k++) {
@@ -286,9 +295,10 @@ void PsiSendRun(
       // H.Update(hashInputs[j - low], widthInBytes);
       // H.Final(hashOutput);
       SM3_Hash(hashInputs[j-low], widthInBytes, hashOutput, sizeof(block));
+      // PrintBlock(*(block*)hashOutput);
       memcpy(sentBuff + (j - low) * hashLengthInBytes, hashOutput, hashLengthInBytes);
     }
-
+    std::cout << "sender oprf test" << std::endl;
     // ch.asyncSend(sentBuff, (up - low) * hashLengthInBytes);
     Point hashSendPoint;
     std::string hashSendString(reinterpret_cast<char*>(sentBuff), (up-low)*hashLengthInBytes);

@@ -228,6 +228,10 @@ void PsiReceiver::run(
     // }
     Sm4EncBlock(aesInput, receiverSize, aesOutput, aesKey);
 
+    // for (int x = 0; x < 100; x++) {
+    //   PrintBlock(aesOutput[x]);
+    // }
+
     for (auto i = 0; i < receiverSize; ++i) {
       for (auto loop = 0; loop < 16; ++loop) {
         recvSet[i].msg[loop] ^= aesOutput[i].msg[loop];
@@ -275,7 +279,7 @@ void PsiReceiver::run(
         // prng.get(matrixA[i], heightInBytes);
         auto k0point = k0[i+wLeft];  // affpoint
         auto k1point = k1[i+wLeft];  // affpoint
-        unsigned char seed[32];
+        unsigned char* seed = new unsigned char[32];
         unsigned char* r0Extend = new unsigned char[heightInBytes];
         unsigned char* r1Extend = new unsigned char[heightInBytes];
         Small8toChar(k0point.x, seed);
@@ -287,9 +291,9 @@ void PsiReceiver::run(
         memcpy(sentMatrix[i], r1Extend, heightInBytes);
 
         for (auto j = 0; j < heightInBytes; ++j) {
-          sentMatrix[i][j] ^= matrixA[i][j] ^ matrixDelta[i][j];
+          sentMatrix[i][j] ^= (matrixA[i][j] ^ matrixDelta[i][j]);
         }
-        std::string send(reinterpret_cast<char*>(sentMatrix[i]), heightInBytes);
+        std::string send((char*)(sentMatrix[i]), heightInBytes);
         // Must test data loss;
         Point SendPoint;
         SendPoint.set_pointset(send);
@@ -311,7 +315,7 @@ void PsiReceiver::run(
 
 		/////////////////// Compute hash outputs ///////////////////////////
     // RandomOracle H(hashLengthInBytes);
-    u8 hashOutput[sizeof(block)];
+    u8 hashOutput[sizeof(block)] = {0};
     // u8 hashOutput[hashLengthInBytes];
     std::unordered_map<uint64_t, std::vector<std::pair<block, ui32>>> allHashes;
 
@@ -338,6 +342,7 @@ void PsiReceiver::run(
         // H.Update(hashInputs[j - low], widthInBytes);
         // H.Final(hashOutput);
         SM3_Hash(hashInputs[j - low], widthInBytes, hashOutput, sizeof(block));
+        if (j < 100) PrintBlock(*(block*)hashOutput);
         allHashes[*(uint64_t*)(hashOutput)].push_back(std::make_pair(*(block*)hashOutput, j));
       }
     }
