@@ -13,7 +13,7 @@
 namespace PSI {
 
 const int param_size = 9;
-psiparams onlineparam = {1024, 1024, 1024, 10, 60, 32, 32, 256, 256};
+psiparams onlineparam = {1024, 1024, 1024, 10, 60, 16, 32, 256, 256};
 
 
 int Parserparam(std::string configPath ) {
@@ -72,7 +72,7 @@ int BatchOTSender(ClientReaderWriter<Point, Point>* stream,
 
   auto ret = stream->Read(&randA);
   std::string randASetString = randA.pointset();
-  std::cout << "batchot sender get ASet = " << randASetString << std::endl;
+  // std::cout << "batchot sender get ASet = " << randASetString << std::endl;
 
   std::istringstream iss(randASetString);
   std::string token;
@@ -129,13 +129,13 @@ void PsiSendRun(
   ///////////////////// Base OTs ///////////////////////////
   unsigned char * choiceB = new unsigned char[width];
   GetRandom(width, choiceB);
-  for (int i=0; i < width; i++) {
-    choiceB[i] = static_cast<int>(choiceB[i]) % 2;
-    std::cout << "choice i = " << int(choiceB[i]) << std::endl;
-  }
+  // for (int i=0; i < width; i++) {
+  //   choiceB[i] = static_cast<int>(choiceB[i]) % 2;
+  //   std::cout << "choice i = " << int(choiceB[i]) << std::endl;
+  // }
   std::vector<affpoint> kc;
   auto res = BatchOTSender(stream, width, choiceB, kc);
-  std::cout << "sender batch ot kc size = " << kc.size() << std::endl;
+  // std::cout << "sender batch ot kc size = " << kc.size() << std::endl;
   // for (int i = 0; i < kc.size(); i++) {
   //   PrintAffPoint(kc[i]);
   //   std::cout << std::endl;
@@ -151,7 +151,6 @@ void PsiSendRun(
   u8* matrixC[widthBucket1];  // widthBucket1 是矩阵C的列数
   for (auto i = 0; i < widthBucket1; ++i) {
     matrixC[i] = new u8[heightInBytes];
-    memset(matrixC[i], 0, heightInBytes);
     // C 中每个元素都是大小为heightInbytes的向量，且初始化为0;
   }
 
@@ -248,7 +247,7 @@ void PsiSendRun(
       char arrCol[heightInBytes+1];
       strcpy(arrCol, matrixColString.c_str());
       memcpy(recvMatrix, (unsigned char*)arrCol, heightInBytes);
-      if (choiceB[i + wLeft]) {
+      if (int(choiceB[i + wLeft])) {
         for (auto j = 0; j < heightInBytes; ++j) {
           matrixC[i][j] ^= recvMatrix[j];
         }
@@ -315,6 +314,7 @@ int PsiSend(ClientReaderWriter<Point, Point>* stream) {
   std::string srcFilePath = "src/data/client.csv";
   // int res = InitData(srcFilePath, clientData);
   auto res = MockData(&clientData, onlineparam.senderSize);
+  // for (int i = 0; i < 102; i++) PrintBlock(clientData[i]);
 
   // PsiSender sender;
   PsiSendRun(stream, \

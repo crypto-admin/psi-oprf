@@ -42,7 +42,7 @@ int PrintAffPoint(affpoint src) {
 int GetRandom(int length, unsigned char * dst) {
   std::random_device rd;
   std::default_random_engine eng(rd());
-  std::uniform_int_distribution<int> distr(0, 256);
+  std::uniform_int_distribution<int> distr(1, 255);
 
   for (int n = 0; n < length; n++) {
     dst[n] = distr(eng);
@@ -56,10 +56,10 @@ int GetRandomUint32(int length, ui32* dst) {
   GetRandom(4*length, temp);
 
   for (int i = 0; i < length; i++) {
-    dst[i] = (temp[4*i] << 24) +
-            (temp[4*i+1] << 16) +
-            temp[4*i+2] << 8 +
-            temp[4*i+3];
+    dst[i] = (ui32)(temp[4*i]) << 24 +
+            (ui32)(temp[4*i+1]) << 16 +
+            (ui32)(temp[4*i+2]) << 8 +
+            (ui32)temp[4*i+3];
   }
 }
 
@@ -182,7 +182,7 @@ int MockData(std::vector<block>* src, int dataSize) {
     PrintBlock(temp);
   }
 
-  for (int i=100; i < dataSize; i++) {
+  for (int i = 100; i < dataSize; i++) {
     GetRandom(16, hashSrc);
     SM3_Hash(hashSrc, 16, hashDst, 16);
     block temp;

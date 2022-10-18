@@ -31,7 +31,7 @@
 namespace PSI {
 
 int param_size = 9;
-psiparams onlineparam = {1024, 1024, 1024, 10, 60, 32, 32, 256, 256};
+psiparams onlineparam = {1024, 1024, 1024, 10, 60, 16, 32, 256, 256};
 
 // read server params from config file, as csv, json..
 int Parserparam() {
@@ -201,9 +201,9 @@ void PsiReceiver::run(
     }
     unsigned char aesKey[16];
     GetRandom(16, aesKey);
-    for (int i = 0; i < 16; i++) {
-      std::cout << int(aesKey[i]) << std::endl;
-    }
+    // for (int i = 0; i < 16; i++) {
+    //   std::cout << int(aesKey[i]) << std::endl;
+    // }
 
     Point key;
     std::string keystring(reinterpret_cast<char*>(aesKey), 16);
@@ -342,7 +342,7 @@ void PsiReceiver::run(
         // H.Update(hashInputs[j - low], widthInBytes);
         // H.Final(hashOutput);
         SM3_Hash(hashInputs[j - low], widthInBytes, hashOutput, sizeof(block));
-        if (j < 100) PrintBlock(*(block*)hashOutput);
+        // if (j < 100) PrintBlock(*(block*)hashOutput);
         allHashes[*(uint64_t*)(hashOutput)].push_back(std::make_pair(*(block*)hashOutput, j));
       }
     }
@@ -396,6 +396,7 @@ int PsiReceive(ServerReaderWriter<Point, Point>* stream) {
   // string srcFilePath = "src/data/serverData.csv";
   // int res = InitData(srcFilePath, serverData);
   auto res = MockData(&serverData, onlineparam.receiverSize);
+  // for (int i = 0; i < 102; i++) PrintBlock(serverData[i]);
 
   PsiReceiver r;
   r.run(stream, \
