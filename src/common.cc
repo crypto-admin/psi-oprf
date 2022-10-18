@@ -194,4 +194,34 @@ int MockData(std::vector<block>* src, int dataSize) {
 }
 
 
+std::string Char2hexstring(char* str, int n)
+{
+  std::ostringstream oss;
+  oss << std::hex;
+  oss << std::setfill('0');
+  oss << std::uppercase;   //大写
+  for (int i = 0; i < n; i++)
+  {
+    unsigned char c = str[i];
+    oss  << "0x" << std::setw(2) << (unsigned int)c;
+    if (i < n - 1)
+      oss << ',';
+  }
+  return oss.str();
+}
+
+
+//char* out输出结果，n返回数据的个数
+int Hexstring2char(const std::string& str, char* out) {
+  int n = 0;
+  int temp;
+  std::istringstream iss(str);
+  iss >> std::hex;
+  while (iss >> temp) {
+    out[n++] = temp;
+    iss.get();
+  }
+  return n;
+}
+
 }  // namespace PSI

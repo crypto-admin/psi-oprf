@@ -114,8 +114,11 @@ int main(int argc, char** argv) {
   // are created. This channel models a connection to an endpoint (in this case,
   // localhost at port 50051). We indicate that the channel isn't authenticated
   // (use of InsecureChannelCredentials()).
-  PsiClient psiClient(grpc::CreateChannel(
-      server_address, grpc::InsecureChannelCredentials()));
+
+  grpc::ChannelArguments channel_args;
+  channel_args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 10 * 1024 * 1024);
+  PsiClient psiClient(grpc::CreateCustomChannel(
+      server_address, grpc::InsecureChannelCredentials(), channel_args));
   std::string user("world");
 
   std::string reply = psiClient.SendPoint(user);

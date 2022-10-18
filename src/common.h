@@ -20,6 +20,7 @@
 
 #include <string>
 #include <vector>
+#include <iomanip>
 #include "crypto/sm2.h"
 #include "crypto/sm4.h"
 #include "crypto/sm3_hash.h"
@@ -68,5 +69,7 @@ int Prf(unsigned char *seed, int length, unsigned char *dst);
 int Small8toChar(small src[DIG_LEN], unsigned char *dst);
 int PrintBlock(block src);
 int MockData(std::vector<block>* src, int dataSize);
+std::string Char2hexstring(char* str, int n);
+int Hexstring2char(const std::string& str, char* out);
 
 }  // namespace PSI

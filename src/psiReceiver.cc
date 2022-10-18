@@ -293,7 +293,8 @@ void PsiReceiver::run(
         for (auto j = 0; j < heightInBytes; ++j) {
           sentMatrix[i][j] ^= (matrixA[i][j] ^ matrixDelta[i][j]);
         }
-        std::string send((char*)(sentMatrix[i]), heightInBytes);
+        // std::string send((char*)(sentMatrix[i]), heightInBytes);
+        std::string send = Char2hexstring((char*)(sentMatrix[i]), heightInBytes);
         // Must test data loss;
         Point SendPoint;
         SendPoint.set_pointset(send);
@@ -361,9 +362,18 @@ void PsiReceiver::run(
       stream->Read(&recvBuffPoint);
       auto recvBufString = recvBuffPoint.pointset();
       char arr[recvBufString.length()+1];
-      strcpy(arr, recvBufString.c_str());
+      // strcpy(arr, recvBufString.c_str());
+      Hexstring2char(recvBufString, arr);
       memcpy(recvBuff, (unsigned char*)arr, (up - low) * hashLengthInBytes);
 
+      if (low == 0) {
+        for (int xx = 0; xx < (up-low)* hashLengthInBytes; xx++) {
+          if (xx % hashLengthInBytes == 0 && xx>0) std::cout << std::endl;
+          // std::cout <<  int(recvBuff[xx]);
+          printf("%02x,", (int)recvBuff[xx]);
+        }
+        std::cout <<  "oprf recv test-------------------------------------" << std::endl;
+      }
 
       for (auto idx = 0; idx < up - low; ++idx) {
         uint64_t mapIdx = *(uint64_t*)(recvBuff + idx * hashLengthInBytes);

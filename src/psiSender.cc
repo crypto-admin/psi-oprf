@@ -245,7 +245,8 @@ void PsiSendRun(
       stream->Read(&matrixCol);  // heightInBytes
       auto matrixColString = matrixCol.pointset();
       char arrCol[heightInBytes+1];
-      strcpy(arrCol, matrixColString.c_str());
+      // strcpy(arrCol, matrixColString.c_str());
+      Hexstring2char(matrixColString, arrCol);
       memcpy(recvMatrix, (unsigned char*)arrCol, heightInBytes);
       if (int(choiceB[i + wLeft])) {
         for (auto j = 0; j < heightInBytes; ++j) {
@@ -295,12 +296,40 @@ void PsiSendRun(
       // H.Final(hashOutput);
       SM3_Hash(hashInputs[j-low], widthInBytes, hashOutput, sizeof(block));
       // PrintBlock(*(block*)hashOutput);
+      if (j == 0) {
+        std::cout << "hash test sender" << std::endl;
+        for (int nn = 0; nn < sizeof(block); nn++) 
+          std::cout << int(hashOutput[nn]) << ",";
+        std::cout << "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&" << hashLengthInBytes << std::endl;
+      }
+    
       memcpy(sentBuff + (j - low) * hashLengthInBytes, hashOutput, hashLengthInBytes);
     }
-    std::cout << "sender oprf test" << std::endl;
+    if (low == 0) {
+      for (int xx = 0; xx < (up-low)* hashLengthInBytes; xx++) {
+        if (xx % hashLengthInBytes == 0  && xx>0 ) std::cout << std::endl;
+        printf("%02x,", (int)(unsigned char)(sentBuff[xx]));
+        
+      }
+      std::cout << "sender oprf test--------------------------------" << std::endl;
+    }
+
     // ch.asyncSend(sentBuff, (up - low) * hashLengthInBytes);
     Point hashSendPoint;
-    std::string hashSendString(reinterpret_cast<char*>(sentBuff), (up-low)*hashLengthInBytes);
+    std::string hashSendString = Char2hexstring((char*)sentBuff, (up - low) * hashLengthInBytes);
+    // test ------------
+    char testxx[hashSendString.length()+1];
+    // strcpy(testxx, hashSendString.data());
+    auto len = Hexstring2char(hashSendString, testxx);
+    // if (low == 0) {
+    //   std::cout << "convert test----------------------" << std::endl;
+    //   for (int xx = 0; xx < (up-low)* hashLengthInBytes; xx++) {
+    //     if (xx % hashLengthInBytes == 0  && xx>0 ) std::cout << std::endl;
+    //     printf("%02x,", int((unsigned char)testxx[xx]));
+        
+    //   }
+    // }
+    // end test ----------------
     hashSendPoint.set_pointset(hashSendString);
     stream->Write(hashSendPoint);
   }
