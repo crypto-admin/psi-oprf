@@ -54,12 +54,11 @@ int GetRandom(int length, unsigned char * dst) {
 int GetRandomUint32(int length, ui32* dst) {
   unsigned char temp[4*length];
   GetRandom(4*length, temp);
-
   for (int i = 0; i < length; i++) {
-    dst[i] = (ui32)(temp[4*i]) << 24 +
-            (ui32)(temp[4*i+1]) << 16 +
-            (ui32)(temp[4*i+2]) << 8 +
-            (ui32)temp[4*i+3];
+    dst[i] = (unsigned int)((temp[4*i]) << 24 |
+            (temp[4*i+1]) << 16 |
+            (temp[4*i+2]) << 8 |
+            temp[4*i+3]);
   }
 }
 
@@ -162,7 +161,7 @@ int Small8toChar(small src[DIG_LEN], unsigned char *dst) {
 
 int PrintBlock(block src) {
   for (int i = 0; i < 16; i++) {
-    std::cout << int(src.msg[i]);
+    printf("%02x,", src.msg[i]);
   }
   std::cout << std::endl;
 }

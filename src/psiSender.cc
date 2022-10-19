@@ -13,7 +13,7 @@
 namespace PSI {
 
 const int param_size = 9;
-psiparams onlineparam = {1024, 1024, 1024, 10, 60, 16, 32, 256, 256};
+psiparams onlineparam = {1024, 1024, 1024, 10, 14, 16, 32, 256, 256};
 
 
 int Parserparam(std::string configPath ) {
@@ -77,6 +77,7 @@ int BatchOTSender(ClientReaderWriter<Point, Point>* stream,
   std::istringstream iss(randASetString);
   std::string token;
   while (getline(iss, token, '\n')) {
+    std::cout << "token =  " << token << std::endl;
     randA.set_pointset(token);
     randASet.push_back(randA);
   }
@@ -89,7 +90,10 @@ int BatchOTSender(ClientReaderWriter<Point, Point>* stream,
     affpoint B;
     basepointmul(&B, randb.rand);  // pointB
     Point2AffinePoint(randASet[i], &A);
-
+    for (int xx = 0; xx < DIG_LEN; xx++) {
+      printf("%08x,", A.x[xx]);
+    }
+    std::cout << "point2affinepoint test." << std::endl;
     if (static_cast<int>(choiceB[i]) == 1) {
       pointadd(&B, &B, &A);
     }
@@ -129,10 +133,10 @@ void PsiSendRun(
   ///////////////////// Base OTs ///////////////////////////
   unsigned char * choiceB = new unsigned char[width];
   GetRandom(width, choiceB);
-  // for (int i=0; i < width; i++) {
-  //   choiceB[i] = static_cast<int>(choiceB[i]) % 2;
-  //   std::cout << "choice i = " << int(choiceB[i]) << std::endl;
-  // }
+  for (int i=0; i < width; i++) {
+    choiceB[i] = static_cast<int>(choiceB[i]) % 2;
+    std::cout << "choice i = " << int(choiceB[i]) << std::endl;
+  }
   std::vector<affpoint> kc;
   auto res = BatchOTSender(stream, width, choiceB, kc);
   // std::cout << "sender batch ot kc size = " << kc.size() << std::endl;
@@ -253,6 +257,11 @@ void PsiSendRun(
           matrixC[i][j] ^= recvMatrix[j];
         }
       }
+      std::cout << "choice B = " << int(choiceB[i + wLeft]) << std::endl;
+      for (int xx = 0; xx < heightInBytes; xx++) {
+        printf("%02x,", matrixC[i][xx]);
+      }
+      std::cout << std::endl;
     }
     ///////////////// Compute hash inputs (transposed) /////////////////////
     for (auto i = 0; i < w; ++i) {
@@ -296,23 +305,23 @@ void PsiSendRun(
       // H.Final(hashOutput);
       SM3_Hash(hashInputs[j-low], widthInBytes, hashOutput, sizeof(block));
       // PrintBlock(*(block*)hashOutput);
-      if (j == 0) {
-        std::cout << "hash test sender" << std::endl;
-        for (int nn = 0; nn < sizeof(block); nn++) 
-          std::cout << int(hashOutput[nn]) << ",";
-        std::cout << "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&" << hashLengthInBytes << std::endl;
-      }
+      // if (j == 0) {
+      //   std::cout << "hash test sender" << std::endl;
+      //   for (int nn = 0; nn < sizeof(block); nn++) 
+      //     std::cout << int(hashOutput[nn]) << ",";
+      //   std::cout << "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&" << hashLengthInBytes << std::endl;
+      // }
     
       memcpy(sentBuff + (j - low) * hashLengthInBytes, hashOutput, hashLengthInBytes);
     }
-    if (low == 0) {
-      for (int xx = 0; xx < (up-low)* hashLengthInBytes; xx++) {
-        if (xx % hashLengthInBytes == 0  && xx>0 ) std::cout << std::endl;
-        printf("%02x,", (int)(unsigned char)(sentBuff[xx]));
+    // if (low == 0) {
+    //   for (int xx = 0; xx < (up-low)* hashLengthInBytes; xx++) {
+    //     if (xx % hashLengthInBytes == 0  && xx>0 ) std::cout << std::endl;
+    //     printf("%02x,", (int)(unsigned char)(sentBuff[xx]));
         
-      }
-      std::cout << "sender oprf test--------------------------------" << std::endl;
-    }
+    //   }
+    //   std::cout << "sender oprf test--------------------------------" << std::endl;
+    // }
 
     // ch.asyncSend(sentBuff, (up - low) * hashLengthInBytes);
     Point hashSendPoint;

@@ -31,7 +31,7 @@
 namespace PSI {
 
 int param_size = 9;
-psiparams onlineparam = {1024, 1024, 1024, 10, 60, 16, 32, 256, 256};
+psiparams onlineparam = {1024, 1024, 1024, 10, 14, 16, 32, 256, 256};
 
 // read server params from config file, as csv, json..
 int Parserparam() {
@@ -125,6 +125,10 @@ int BatchOT(ServerReaderWriter<Point, Point>* stream,
     randASet.push_back(p);
     scalarSet.push_back(randa);
     std::string temp = "";
+    for (int xx = 0; xx < DIG_LEN; xx++) {
+      printf("%08x,", p.x[xx]);
+    }
+    std::cout << "rand A test =-----------------" << std::endl;
     AffinePoint2String(p, &temp);
     randASetString += temp;
   }
@@ -206,7 +210,7 @@ void PsiReceiver::run(
     // }
 
     Point key;
-    std::string keystring(reinterpret_cast<char*>(aesKey), 16);
+    std::string keystring = Char2hexstring(reinterpret_cast<char*>(aesKey), 16);
     key.set_pointset(keystring);
     stream->Write(key);  // TODO:open it
 
@@ -223,9 +227,9 @@ void PsiReceiver::run(
       recvSet[i] = *(block*)(h1Output + sizeof(block));
     }
     
-    // for (int x = 0; x < 16; x++) {
-    //   std::cout << int(aesInput[0].msg[x]) << std::endl;
-    // }
+    for (int x = 0; x < 16; x++) {
+      std::cout << int(aesInput[0].msg[x]) << std::endl;
+    }
     Sm4EncBlock(aesInput, receiverSize, aesOutput, aesKey);
 
     // for (int x = 0; x < 100; x++) {
@@ -287,6 +291,11 @@ void PsiReceiver::run(
         Small8toChar(k1point.x, seed);
         Prf(seed, heightInBytes, r1Extend);
         memcpy(matrixA[i], r0Extend, heightInBytes);
+        // 
+        for (int xx = 0; xx < heightInBytes; xx++) {
+          printf("%02x,", matrixA[i][xx]);
+        }
+        std::cout << "Matrix A test" <<  std::endl;
         sentMatrix[i] = new u8[heightInBytes];
         memcpy(sentMatrix[i], r1Extend, heightInBytes);
 
@@ -343,7 +352,13 @@ void PsiReceiver::run(
         // H.Update(hashInputs[j - low], widthInBytes);
         // H.Final(hashOutput);
         SM3_Hash(hashInputs[j - low], widthInBytes, hashOutput, sizeof(block));
-        // if (j < 100) PrintBlock(*(block*)hashOutput);
+        // if (j < 120) {
+        //   PrintBlock(*(block*)hashOutput);
+        //   for (int xx = 0; xx < 16; xx++) {
+        //     printf("%02x,", hashOutput[xx]);
+        //   }
+        //   printf("\n");
+        // }
         allHashes[*(uint64_t*)(hashOutput)].push_back(std::make_pair(*(block*)hashOutput, j));
       }
     }
@@ -363,17 +378,19 @@ void PsiReceiver::run(
       auto recvBufString = recvBuffPoint.pointset();
       char arr[recvBufString.length()+1];
       // strcpy(arr, recvBufString.c_str());
-      Hexstring2char(recvBufString, arr);
+      auto recvLen = Hexstring2char(recvBufString, arr);
+      std::cout << "recvLen = " << recvLen << std::endl;
+      std::cout << (up - low) * hashLengthInBytes << std::endl;
       memcpy(recvBuff, (unsigned char*)arr, (up - low) * hashLengthInBytes);
 
-      if (low == 0) {
-        for (int xx = 0; xx < (up-low)* hashLengthInBytes; xx++) {
-          if (xx % hashLengthInBytes == 0 && xx>0) std::cout << std::endl;
-          // std::cout <<  int(recvBuff[xx]);
-          printf("%02x,", (int)recvBuff[xx]);
-        }
-        std::cout <<  "oprf recv test-------------------------------------" << std::endl;
-      }
+      // if (low == 0) {
+      //   for (int xx = 0; xx < (up-low)* hashLengthInBytes; xx++) {
+      //     if (xx % hashLengthInBytes == 0 && xx>0) std::cout << std::endl;
+      //     // std::cout <<  int(recvBuff[xx]);
+      //     printf("%02x,", (int)recvBuff[xx]);
+      //   }
+      //   std::cout <<  "oprf recv test-------------------------------------" << std::endl;
+      // }
 
       for (auto idx = 0; idx < up - low; ++idx) {
         uint64_t mapIdx = *(uint64_t*)(recvBuff + idx * hashLengthInBytes);
@@ -382,7 +399,8 @@ void PsiReceiver::run(
         if (found == allHashes.end()) continue;
         
         for (auto i = 0; i < found->second.size(); ++i) {
-          if (memcmp(&(found->second[i].first), recvBuff + idx * hashLengthInBytes, hashLengthInBytes) == 0) {
+          std::cout << "never in" << std::endl;
+          if (memcmp(found->second[i].first.msg, recvBuff + idx * hashLengthInBytes, hashLengthInBytes) == 0) {
             ++psi;
             break;
           }
