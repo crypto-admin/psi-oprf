@@ -125,10 +125,6 @@ int BatchOT(ServerReaderWriter<Point, Point>* stream,
     randASet.push_back(p);
     scalarSet.push_back(randa);
     std::string temp = "";
-    // for (int xx = 0; xx < DIG_LEN; xx++) {
-    //   printf("%08x,", p.x[xx]);
-    // }
-    // std::cout << "rand A test =-----------------" << std::endl;
     AffinePoint2String(p, &temp);
     randASetString += temp;
   }
@@ -175,12 +171,6 @@ void PsiReceiver::run(
     std::vector<affpoint> k0;
     std::vector<affpoint> k1;
     BatchOT(stream, width, k0, k1);
-    // std::cout << "server BatchOT k0 size = " << k0.size() << std::endl;
-    // for (int i = 0; i < k0.size(); i++) {
-    //   PrintAffPoint(k0[i]);
-    //   PrintAffPoint(k1[i]);
-    //   std::cout << "-------------------------------" << std::endl;
-    // }  // Test Batch OT correctness
 
     /****** PSI batch compute Matrix A/B ******/
     u8* matrixA[widthBucket1];  // 每次处理5列
@@ -205,10 +195,6 @@ void PsiReceiver::run(
     }
     unsigned char aesKey[16];
     GetRandom(16, aesKey);
-    for (int i = 0; i < 16; i++) {
-      printf("%02x,",aesKey[i]);
-    }
-    std::cout <<  "aeskey test server =============" << std::endl;
 
     Point key;
     std::string keystring = Char2hexstring(reinterpret_cast<char*>(aesKey), 16);
@@ -227,15 +213,8 @@ void PsiReceiver::run(
       aesInput[i] = *(block*)h1Output;
       recvSet[i] = *(block*)(h1Output + sizeof(block));
     }
-    
-    // for (int x = 0; x < 16; x++) {
-    //   std::cout << int(aesInput[0].msg[x]) << std::endl;
-    // }
+
     Sm4EncBlock(aesInput, receiverSize, aesOutput, aesKey);
-    std::cout << "aes enc test=========================" << std::endl;
-    for (int x = 0; x < 102; x++) {
-      PrintBlock(aesInput[x]);
-    }
 
     for (auto i = 0; i < receiverSize; ++i) {
       for (auto loop = 0; loop < 16; ++loop) {
@@ -304,7 +283,6 @@ void PsiReceiver::run(
         Point SendPoint;
         SendPoint.set_pointset(send);
         stream->Write(SendPoint);
-        // ch.asyncSend(sentMatrix[i], heightInBytes);
       }
 
       ///////////////// Compute hash inputs (transposed) /////////////////////
@@ -344,17 +322,7 @@ void PsiReceiver::run(
       }
 
       for (auto j = low; j < up; ++j) {
-        // H.Reset();
-        // H.Update(hashInputs[j - low], widthInBytes);
-        // H.Final(hashOutput);
         SM3_Hash(hashInputs[j - low], widthInBytes, hashOutput, sizeof(block));
-        // if (j < 120) {
-        //   PrintBlock(*(block*)hashOutput);
-        //   for (int xx = 0; xx < 16; xx++) {
-        //     printf("%02x,", hashOutput[xx]);
-        //   }
-        //   printf("\n");
-        // }
         allHashes[*(uint64_t*)(hashOutput)].push_back(std::make_pair(*(block*)hashOutput, j));
       }
     }
@@ -368,24 +336,12 @@ void PsiReceiver::run(
     for (auto low = 0; low < senderSize; low += bucket2) {
       auto up = low + bucket2 < senderSize ? low + bucket2 : senderSize;
 
-      // ch.recv(recvBuff, (up - low) * hashLengthInBytes);
       Point recvBuffPoint;
       stream->Read(&recvBuffPoint);
       auto recvBufString = recvBuffPoint.pointset();
       char arr[recvBufString.length()+1];
-      // strcpy(arr, recvBufString.c_str());
       auto recvLen = Hexstring2char(recvBufString, arr);
-      std::cout << (up - low) * hashLengthInBytes << std::endl;
       memcpy(recvBuff, (unsigned char*)arr, (up - low) * hashLengthInBytes);
-
-      // if (low == 0) {
-      //   for (int xx = 0; xx < (up-low)* hashLengthInBytes; xx++) {
-      //     if (xx % hashLengthInBytes == 0 && xx>0) std::cout << std::endl;
-      //     // std::cout <<  int(recvBuff[xx]);
-      //     printf("%02x,", (int)recvBuff[xx]);
-      //   }
-      //   std::cout <<  "oprf recv test-------------------------------------" << std::endl;
-      // }
 
       for (auto idx = 0; idx < up - low; ++idx) {
         uint64_t mapIdx = *(uint64_t*)(recvBuff + idx * hashLengthInBytes);
@@ -394,7 +350,6 @@ void PsiReceiver::run(
         if (found == allHashes.end()) continue;
         
         for (auto i = 0; i < found->second.size(); ++i) {
-          std::cout << "never in" << std::endl;
           if (memcmp(found->second[i].first.msg, recvBuff + idx * hashLengthInBytes, hashLengthInBytes) == 0) {
             ++psi;
             break;
