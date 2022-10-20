@@ -31,7 +31,7 @@
 using namespace PSI;
 using namespace std;
 
-int debug = 1;
+int debug = 0;
 
 
 // Logic and data behind the server's behavior.

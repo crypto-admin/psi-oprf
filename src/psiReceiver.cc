@@ -31,7 +31,7 @@
 namespace PSI {
 
 int param_size = 9;
-psiparams onlineparam = {1024, 1024, 1024, 10, 14, 16, 32, 256, 256};
+psiparams onlineparam = {1024, 1024, 1024, 10, 200, 16, 32, 256, 256};
 
 // read server params from config file, as csv, json..
 int Parserparam() {
@@ -97,7 +97,7 @@ int ComputeKey(std::string src,
     affpoint temp1;
     affpoint temp2;
     B.set_pointset(pointSet[i]);
-    Point2AffinePoint(B, &k);  // 有重复代码，优化！
+    Point2AffinePoint(B, &k);  // 有重复代码，优化!
     pointmul(&temp0, &k, scalarASet[i].rand);  // a*B
     k0.push_back(temp0);
     auto fuA = PointNeg(randASet[i]);  // fuA = -A
@@ -125,10 +125,10 @@ int BatchOT(ServerReaderWriter<Point, Point>* stream,
     randASet.push_back(p);
     scalarSet.push_back(randa);
     std::string temp = "";
-    for (int xx = 0; xx < DIG_LEN; xx++) {
-      printf("%08x,", p.x[xx]);
-    }
-    std::cout << "rand A test =-----------------" << std::endl;
+    // for (int xx = 0; xx < DIG_LEN; xx++) {
+    //   printf("%08x,", p.x[xx]);
+    // }
+    // std::cout << "rand A test =-----------------" << std::endl;
     AffinePoint2String(p, &temp);
     randASetString += temp;
   }
@@ -205,9 +205,10 @@ void PsiReceiver::run(
     }
     unsigned char aesKey[16];
     GetRandom(16, aesKey);
-    // for (int i = 0; i < 16; i++) {
-    //   std::cout << int(aesKey[i]) << std::endl;
-    // }
+    for (int i = 0; i < 16; i++) {
+      printf("%02x,",aesKey[i]);
+    }
+    std::cout <<  "aeskey test server =============" << std::endl;
 
     Point key;
     std::string keystring = Char2hexstring(reinterpret_cast<char*>(aesKey), 16);
@@ -227,14 +228,14 @@ void PsiReceiver::run(
       recvSet[i] = *(block*)(h1Output + sizeof(block));
     }
     
-    for (int x = 0; x < 16; x++) {
-      std::cout << int(aesInput[0].msg[x]) << std::endl;
-    }
-    Sm4EncBlock(aesInput, receiverSize, aesOutput, aesKey);
-
-    // for (int x = 0; x < 100; x++) {
-    //   PrintBlock(aesOutput[x]);
+    // for (int x = 0; x < 16; x++) {
+    //   std::cout << int(aesInput[0].msg[x]) << std::endl;
     // }
+    Sm4EncBlock(aesInput, receiverSize, aesOutput, aesKey);
+    std::cout << "aes enc test=========================" << std::endl;
+    for (int x = 0; x < 102; x++) {
+      PrintBlock(aesInput[x]);
+    }
 
     for (auto i = 0; i < receiverSize; ++i) {
       for (auto loop = 0; loop < 16; ++loop) {
@@ -291,11 +292,6 @@ void PsiReceiver::run(
         Small8toChar(k1point.x, seed);
         Prf(seed, heightInBytes, r1Extend);
         memcpy(matrixA[i], r0Extend, heightInBytes);
-        // 
-        for (int xx = 0; xx < heightInBytes; xx++) {
-          printf("%02x,", matrixA[i][xx]);
-        }
-        std::cout << "Matrix A test" <<  std::endl;
         sentMatrix[i] = new u8[heightInBytes];
         memcpy(sentMatrix[i], r1Extend, heightInBytes);
 
@@ -379,7 +375,6 @@ void PsiReceiver::run(
       char arr[recvBufString.length()+1];
       // strcpy(arr, recvBufString.c_str());
       auto recvLen = Hexstring2char(recvBufString, arr);
-      std::cout << "recvLen = " << recvLen << std::endl;
       std::cout << (up - low) * hashLengthInBytes << std::endl;
       memcpy(recvBuff, (unsigned char*)arr, (up - low) * hashLengthInBytes);
 
@@ -424,6 +419,7 @@ int PsiReceive(ServerReaderWriter<Point, Point>* stream) {
   // string srcFilePath = "src/data/serverData.csv";
   // int res = InitData(srcFilePath, serverData);
   auto res = MockData(&serverData, onlineparam.receiverSize);
+  // std::cout << "mockdata = " << std::endl;
   // for (int i = 0; i < 102; i++) PrintBlock(serverData[i]);
 
   PsiReceiver r;

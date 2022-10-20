@@ -35,7 +35,6 @@ small P[DIG_LEN] = {
 int PrintAffPoint(affpoint src) {
     std::string dst = "";
     AffinePoint2String(src, &dst);
-    std::cout << dst << std::endl;
     return 0;
 }
 
@@ -172,13 +171,14 @@ int MockData(std::vector<block>* src, int dataSize) {
   unsigned int seed = 100;
   for (int i = 0; i < 100; i++) {
     for (int k = 0; k < 16; k++) {
-      hashSrc[k] = rand_r(&seed) % 128;
+      unsigned char temp = rand_r(&seed) % 128;
+      hashSrc[k] = temp;
     }
     SM3_Hash(hashSrc, 16, hashDst, 16);
     block temp;
     memcpy(temp.msg, hashDst, 16);
     src->push_back(temp);
-    PrintBlock(temp);
+    // PrintBlock(temp);
   }
 
   for (int i = 100; i < dataSize; i++) {

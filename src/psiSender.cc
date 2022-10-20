@@ -13,7 +13,7 @@
 namespace PSI {
 
 const int param_size = 9;
-psiparams onlineparam = {1024, 1024, 1024, 10, 14, 16, 32, 256, 256};
+psiparams onlineparam = {1024, 1024, 1024, 10, 200, 16, 32, 256, 256};
 
 
 int Parserparam(std::string configPath ) {
@@ -90,10 +90,6 @@ int BatchOTSender(ClientReaderWriter<Point, Point>* stream,
     affpoint B;
     basepointmul(&B, randb.rand);  // pointB
     Point2AffinePoint(randASet[i], &A);
-    for (int xx = 0; xx < DIG_LEN; xx++) {
-      printf("%08x,", A.x[xx]);
-    }
-    std::cout << "point2affinepoint test." << std::endl;
     if (static_cast<int>(choiceB[i]) == 1) {
       pointadd(&B, &B, &A);
     }
@@ -135,7 +131,7 @@ void PsiSendRun(
   GetRandom(width, choiceB);
   for (int i=0; i < width; i++) {
     choiceB[i] = static_cast<int>(choiceB[i]) % 2;
-    std::cout << "choice i = " << int(choiceB[i]) << std::endl;
+    // std::cout << "choice i = " << int(choiceB[i]) << std::endl;
   }
   std::vector<affpoint> kc;
   auto res = BatchOTSender(stream, width, choiceB, kc);
@@ -171,11 +167,13 @@ void PsiSendRun(
   auto key = aesKeyPoint.pointset();
   char arr[key.length()+1];
   unsigned char aesKey[16];
-  strcpy(arr, key.c_str());
+  // strcpy(arr, key.c_str());
+  Hexstring2char(key, arr);
   memcpy(aesKey, (unsigned char*)arr, 16);
-  // for (int i = 0; i < 16; i++) {
-  //   std::cout << int(aesKey[i]) << std::endl;
-  // }
+  for (int i = 0; i < 16; i++) {
+    printf("%02x,",aesKey[i]);
+  }
+  std::cout <<  "aeskey test=============" << std::endl;
 
   block* sendSet = new block[senderSize];
   block* aesInput = new block[senderSize];
@@ -197,9 +195,10 @@ void PsiSendRun(
 
   // commonAes.ecbEncBlocks(aesInput, senderSize, aesOutput);
   Sm4EncBlock(aesInput, senderSize, aesOutput, aesKey);
-  // for (int i = 0; i < 100; i++) {
-  //   PrintBlock(aesOutput[i]);
-  // }
+  std::cout << "aes Enc test==============" << std::endl;
+  for (int i = 0; i < 102; i++) {
+    PrintBlock(aesInput[i]);
+  }
 
   for (auto i = 0; i < senderSize; ++i) {
       for (auto loop = 0; loop < 16; ++loop) {
@@ -257,11 +256,11 @@ void PsiSendRun(
           matrixC[i][j] ^= recvMatrix[j];
         }
       }
-      std::cout << "choice B = " << int(choiceB[i + wLeft]) << std::endl;
-      for (int xx = 0; xx < heightInBytes; xx++) {
-        printf("%02x,", matrixC[i][xx]);
-      }
-      std::cout << std::endl;
+      // std::cout << "choice B = " << int(choiceB[i + wLeft]) << std::endl;
+      // for (int xx = 0; xx < heightInBytes; xx++) {
+      //   printf("%02x,", matrixC[i][xx]);
+      // }
+      // std::cout << std::endl;
     }
     ///////////////// Compute hash inputs (transposed) /////////////////////
     for (auto i = 0; i < w; ++i) {
@@ -352,6 +351,7 @@ int PsiSend(ClientReaderWriter<Point, Point>* stream) {
   std::string srcFilePath = "src/data/client.csv";
   // int res = InitData(srcFilePath, clientData);
   auto res = MockData(&clientData, onlineparam.senderSize);
+  // std::cout << "mockdata = " << std::endl;
   // for (int i = 0; i < 102; i++) PrintBlock(clientData[i]);
 
   // PsiSender sender;

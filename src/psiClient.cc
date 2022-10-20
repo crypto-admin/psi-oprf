@@ -37,7 +37,7 @@ using ot::Psi;
 using ot::Point;
 using namespace PSI;
 
-int debug = 1;
+int debug = 0;
 
 class PsiClient {
  public:
@@ -53,7 +53,7 @@ class PsiClient {
     ClientContext context;
 
     gpr_timespec timespec;
-    timespec.tv_sec = 10;
+    timespec.tv_sec = 100;
     timespec.tv_nsec = 0;
     timespec.clock_type=GPR_TIMESPAN;
 
