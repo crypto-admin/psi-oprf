@@ -57,6 +57,7 @@ PSI-OPRF Source Code
     ```
 
 ##### Run
-./psiServer --senderSiz=1024, --receiverSize=1024, --width=20, --port=50051
-./psiClient --senderSiz=1024, --receiverSize=1024, --width=20, --port=50051, --ip=127.0.0.1
-
+```
+    ./psiServer --senderSiz=1024, --receiverSize=1024, --width=20, --port=50051
+    ./psiClient --senderSiz=1024, --receiverSize=1024, --width=20, --port=50051, --ip=127.0.0.1
+```
