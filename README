@@ -1,6 +1,0 @@
-1. create this repo to create grpc psi-oprf, with paper CM20:https://eprint.iacr.org/2020/729.pdf
-2. crypto with sm2/3/4;
-3. server.cpp to impl psi receiver;
-4. client.cpp to impl psi sender;
-
-

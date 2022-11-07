@@ -77,12 +77,10 @@ int BatchOTSender(ClientReaderWriter<Point, Point>* stream,
   std::istringstream iss(randASetString);
   std::string token;
   while (getline(iss, token, '\n')) {
-    std::cout << "token =  " << token << std::endl;
     randA.set_pointset(token);
     randASet.push_back(randA);
   }
 
-  std::cout << "clent get randASet size = " << randASet.size() << std::endl;
   for (int i=0; i < width; i++) {  // why not use batch?
     block32 randb;
     GetRandomUint32(8, randb.rand);
@@ -135,11 +133,6 @@ void PsiSendRun(
   }
   std::vector<affpoint> kc;
   auto res = BatchOTSender(stream, width, choiceB, kc);
-  // std::cout << "sender batch ot kc size = " << kc.size() << std::endl;
-  // for (int i = 0; i < kc.size(); i++) {
-  //   PrintAffPoint(kc[i]);
-  //   std::cout << std::endl;
-  // }
 
   /** PSI process **/
   u8* transLocations[widthBucket1];
@@ -167,13 +160,8 @@ void PsiSendRun(
   auto key = aesKeyPoint.pointset();
   char arr[key.length()+1];
   unsigned char aesKey[16];
-  // strcpy(arr, key.c_str());
   Hexstring2char(key, arr);
   memcpy(aesKey, (unsigned char*)arr, 16);
-  for (int i = 0; i < 16; i++) {
-    printf("%02x,",aesKey[i]);
-  }
-  std::cout <<  "aeskey test=============" << std::endl;
 
   block* sendSet = new block[senderSize];
   block* aesInput = new block[senderSize];
@@ -181,11 +169,7 @@ void PsiSendRun(
   
   // RandomOracle H1(h1LengthInBytes);  // 32, 256bit
   u8 h1Output[h1LengthInBytes];
-  std::cout << "-------------aes test.. " << std::endl;
   for (auto i = 0; i < senderSize; ++i) {
-    // H1.Reset();
-    // H1.Update((u8*)(senderSet.data() + i), sizeof(block));
-    // H1.Final(h1Output);   // H1(x)
     SM3_Hash((u8*)(senderSet.data() + i), sizeof(block), h1Output, 32);
 
     aesInput[i] = *(block*)h1Output; // 做了截断, 前16字节；
@@ -195,11 +179,6 @@ void PsiSendRun(
 
   // commonAes.ecbEncBlocks(aesInput, senderSize, aesOutput);
   Sm4EncBlock(aesInput, senderSize, aesOutput, aesKey);
-  std::cout << "aes Enc test==============" << std::endl;
-  for (int i = 0; i < 102; i++) {
-    PrintBlock(aesInput[i]);
-  }
-
   for (auto i = 0; i < senderSize; ++i) {
       for (auto loop = 0; loop < 16; ++loop) {
         sendSet[i].msg[loop] ^= aesOutput[i].msg[loop];
@@ -229,21 +208,15 @@ void PsiSendRun(
     recvMatrix = new u8[heightInBytes];
 
     for (auto i = 0; i < w; ++i) {
-      // PRNG prng(otMessages[i + wLeft]);
-      // prng.get(matrixC[i], heightInBytes);
       auto kcpoint = kc[i+wLeft];  // affpoint
       unsigned char *seed = new unsigned char[32];
       unsigned char* rcExtend = new unsigned char[heightInBytes];
-      // for (int nn = 0; nn < 8; nn++) {
-      //   std::cout << kcpoint.x[nn];
-      // }
-      // std::cout << "kcpoint test=========================" << std::endl;
       Small8toChar(kcpoint.x, seed);
       Prf(seed, heightInBytes, rcExtend);
       for (ui32 k = 0; k < heightInBytes; k++) {
         matrixC[i][k] = rcExtend[k];
       }
-      // ch.recv(recvMatrix, heightInBytes);
+
       Point matrixCol;
       stream->Read(&matrixCol);  // heightInBytes
       auto matrixColString = matrixCol.pointset();
@@ -256,11 +229,6 @@ void PsiSendRun(
           matrixC[i][j] ^= recvMatrix[j];
         }
       }
-      // std::cout << "choice B = " << int(choiceB[i + wLeft]) << std::endl;
-      // for (int xx = 0; xx < heightInBytes; xx++) {
-      //   printf("%02x,", matrixC[i][xx]);
-      // }
-      // std::cout << std::endl;
     }
     ///////////////// Compute hash inputs (transposed) /////////////////////
     for (auto i = 0; i < w; ++i) {
@@ -274,7 +242,6 @@ void PsiSendRun(
   std::cout << "Sender transposed hash input computed\n";
 
   /////////////////// Compute hash outputs ///////////////////////////
-  // RandomOracle H(hashLengthInBytes); // SM3
   u8 hashOutput[sizeof(block)]; // think
   // u8 hashOutput[hashLengthInBytes];
   u8* hashInputs[bucket2];
@@ -299,45 +266,14 @@ void PsiSendRun(
     u8* sentBuff = new u8[(up - low) * hashLengthInBytes];
 
     for (auto j = low; j < up; ++j) {
-      // H.Reset();
-      // H.Update(hashInputs[j - low], widthInBytes);
-      // H.Final(hashOutput);
       SM3_Hash(hashInputs[j-low], widthInBytes, hashOutput, sizeof(block));
-      // PrintBlock(*(block*)hashOutput);
-      // if (j == 0) {
-      //   std::cout << "hash test sender" << std::endl;
-      //   for (int nn = 0; nn < sizeof(block); nn++) 
-      //     std::cout << int(hashOutput[nn]) << ",";
-      //   std::cout << "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&" << hashLengthInBytes << std::endl;
-      // }
-    
       memcpy(sentBuff + (j - low) * hashLengthInBytes, hashOutput, hashLengthInBytes);
     }
-    // if (low == 0) {
-    //   for (int xx = 0; xx < (up-low)* hashLengthInBytes; xx++) {
-    //     if (xx % hashLengthInBytes == 0  && xx>0 ) std::cout << std::endl;
-    //     printf("%02x,", (int)(unsigned char)(sentBuff[xx]));
-        
-    //   }
-    //   std::cout << "sender oprf test--------------------------------" << std::endl;
-    // }
-
-    // ch.asyncSend(sentBuff, (up - low) * hashLengthInBytes);
     Point hashSendPoint;
     std::string hashSendString = Char2hexstring((char*)sentBuff, (up - low) * hashLengthInBytes);
     // test ------------
     char testxx[hashSendString.length()+1];
-    // strcpy(testxx, hashSendString.data());
     auto len = Hexstring2char(hashSendString, testxx);
-    // if (low == 0) {
-    //   std::cout << "convert test----------------------" << std::endl;
-    //   for (int xx = 0; xx < (up-low)* hashLengthInBytes; xx++) {
-    //     if (xx % hashLengthInBytes == 0  && xx>0 ) std::cout << std::endl;
-    //     printf("%02x,", int((unsigned char)testxx[xx]));
-        
-    //   }
-    // }
-    // end test ----------------
     hashSendPoint.set_pointset(hashSendString);
     stream->Write(hashSendPoint);
   }
@@ -370,4 +306,4 @@ int PsiSend(ClientReaderWriter<Point, Point>* stream) {
   return 0;
 }
 
-}
+}  // namespace PSI
