@@ -28,6 +28,7 @@ bazel*
 *.a
 *.lib
 
+.idea/
 # Executables
 *.exe
 *.out
