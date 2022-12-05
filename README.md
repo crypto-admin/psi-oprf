@@ -13,9 +13,10 @@ By *Melissa Chase, Peihan Miao* <br>in [Crypto2020](https://crypto.iacr.org/2020
 
 - [Features](#features)
 - [Requirements](#requirements)
-- [ABY Source Code](#aby-source-code)
+- [PSI Source Code](#aby-source-code)
     - [Repository Structure](#repository-structure)
-    - [Building the ABY Framework](#building-the-aby-framework)
+    - [Building](#building-the-aby-framework)
+    - [RUN](#testing)
 
 Features
 ---
@@ -58,6 +59,6 @@ PSI-OPRF Source Code
 
 ##### Run
 ```
-    ./psiServer --senderSiz=1024, --receiverSize=1024, --width=20, --port=50051
-    ./psiClient --senderSiz=1024, --receiverSize=1024, --width=20, --port=50051, --ip=127.0.0.1
+    ./psiServer --senderSize=1024, --receiverSize=1024, --width=20, --port=50051
+    ./psiClient --senderSize=1024, --receiverSize=1024, --width=20, --port=50051, --ip=127.0.0.1
 ```
