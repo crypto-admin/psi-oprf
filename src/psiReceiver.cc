@@ -368,7 +368,14 @@ void PsiReceiver::run(
 }
 
 
-int PsiReceive(ServerReaderWriter<Point, Point>* stream) {
+int PsiReceive(ServerReaderWriter<Point, Point>* stream,
+                 bool debug = false,
+                 uint32_t senderSize = 1024,
+                 uint32_t receiverSize = 1024,
+                 uint32_t height = 1024,
+                 int width = 600,
+                 int hashSize = 32
+              ) {
   Parserparam();
   std::vector<block> serverData;
   // string srcFilePath = "src/data/serverData.csv";

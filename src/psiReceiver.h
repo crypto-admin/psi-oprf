@@ -55,7 +55,13 @@ class PsiReceiver {
     const ui32& bucket2);
 };
 
-int PsiReceive(ServerReaderWriter<Point, Point>* stream);
+int PsiReceive(ServerReaderWriter<Point, Point>* stream,
+                 bool debug,
+                 uint32_t senderSize,
+                 uint32_t receiverSize,
+                 uint32_t height,
+                 int width,
+                 int hashSize);
 
 }  // namespace PSI
 

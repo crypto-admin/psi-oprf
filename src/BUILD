@@ -38,6 +38,7 @@ cc_binary(
         "//src/crypto:ecc",
         # http_archive made this label available for binding
         "@com_github_grpc_grpc//:grpc++",
+        "@com_github_gflags_gflags//:gflags",
     ],
 )
 
@@ -55,5 +56,6 @@ cc_binary(
         "//src/crypto:ecc",
         # http_archive made this label available for binding
         "@com_github_grpc_grpc//:grpc++",
+        "@com_github_gflags_gflags//:gflags",
     ],
 )

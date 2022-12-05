@@ -1,3 +1,11 @@
+
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+git_repository(
+    name = "com_github_gflags_gflags",
+    commit = "e171aa2d15ed9eb17054558e0b3a6a413bb01067",
+    remote = "https://github.com/gflags/gflags.git",
+)
+
 ##### Protobuf Rules for Bazel
 ##### See https://github.com/bazelbuild/rules_proto
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")

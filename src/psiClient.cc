@@ -19,6 +19,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <gflags/gflags.h>
 
 #include <grpcpp/grpcpp.h>
 
@@ -37,7 +38,13 @@ using ot::Psi;
 using ot::Point;
 using namespace PSI;
 
-int debug = 0;
+DEFINE_bool(debug, false, "Open the print, and grpc test");
+DEFINE_string(port, "50051", "psi server default port");
+DEFINE_int32(senderSize, 1024, "sender's data size");
+DEFINE_int32(receiverSize, 1024, "receiver's data size");
+DEFINE_int32(width, 600, "matrix width");
+DEFINE_int32(hashSize, 32, "default hash size");
+
 
 class PsiClient {
  public:
@@ -63,7 +70,7 @@ class PsiClient {
 
     ClientReaderWriter<Point, Point>* stream = stream1.get();
 
-    if (debug == 1) { // test conn
+    if (debug) { // test conn
       // Data we are sending to the server.
       for (int loop = 0; loop < 100; loop++) {
         Point request;
@@ -80,7 +87,6 @@ class PsiClient {
         std::cout << "client got " << got.pointset() <<std::endl;
       }
     }
-
 
 
     int psiRes = PsiSend(stream);

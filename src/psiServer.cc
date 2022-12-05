@@ -18,6 +18,7 @@
 
 #include <iostream>
 #include <memory>
+#include <gflags/gflags.h>
 
 #ifdef BAZEL_BUILD
 #include "src/proto/ot.grpc.pb.h"
@@ -31,14 +32,33 @@
 using namespace PSI;
 using namespace std;
 
-int debug = 0;
-
+DEFINE_bool(debug, false, "Open the print, and grpc test");
+DEFINE_string(port, "50051", "psi server default port");
+DEFINE_int32(senderSize, 1024, "sender's data size");
+DEFINE_int32(receiverSize, 1024, "receiver's data size");
+DEFINE_int32(width, 600, "matrix width");
+DEFINE_int32(hashSize, 32, "default hash size");
 
 // Logic and data behind the server's behavior.
 class PsiServiceImpl final : public Psi::Service {
+ public:
+  PsiServiceImpl(bool debug,
+                 uint32_t senderSize,
+                 uint32_t receiverSize,
+                 uint32_t height,
+                 int width,
+                 int hashSize
+                 ) {
+    debug = debug,
+    senderSize = senderSize;
+    receiverSize = receiverSize;
+    height = height;
+    width = width;
+    hashSize = hashSize;
+  }
   Status SendPoint(ServerContext* context,
                   ServerReaderWriter<Point, Point>* stream) override {
-    if (debug != 0) {
+    if (debug) {
       for (int loop = 0; loop < 100; loop++) {
         Point request;
         stream->Read(&request);
@@ -51,18 +71,38 @@ class PsiServiceImpl final : public Psi::Service {
       }
     }
 
-
-    int resPsiReceive = PsiReceive(stream);  // 20221012确认是内部函数的导致的double free
+    int resPsiReceive = PsiReceive(stream, debug, senderSize,receiverSize, height, width, hashSize);
+    std::cout << resPsiReceive << std::endl;
+    // 20221012确认是内部函数的导致的double free
 
     return Status::OK;
   }
+
+ private:
+    bool debug = false;
+    uint32_t senderSize = 1024;
+    uint32_t receiverSize = 1024;
+    uint32_t height = 1024;
+    int width = 600;
+    int hashSize = 32;
 };
 
-void RunServer() {
+void RunServer(bool debug,
+              std::string serverPort,
+              uint32_t senderSize,
+              uint32_t receiverSize,
+              uint32_t height,
+              int width,
+              int hashSize
+              ) {
   std::string address = "0.0.0.0";
   std::string port = "50051";
+  if (serverPort != "50051") {
+    port = serverPort;
+  }
+
   std::string server_address = address + ":" + port;
-  PsiServiceImpl servicePsi;
+  PsiServiceImpl servicePsi(debug, senderSize, receiverSize, height, width, hashSize);
 
   ServerBuilder builder;
   // Listen on the given address without any authentication mechanism.
@@ -82,7 +122,14 @@ void RunServer() {
 }
 
 int main(int argc, char** argv) {
-  RunServer();
+  google::ParseCommandLineFlags(&argc, &argv, true);
+  std::cout << "port:" << FLAGS_port << std::endl;
+  std::cout << "debug:" << FLAGS_debug << std::endl;
+  std::cout << "senderSize :" << FLAGS_senderSize << std::endl;
+  std::cout << "receiverSize:" << FLAGS_receiverSize << std::endl;
+  std::cout << "width:" << FLAGS_width << std::endl;
+
+  RunServer(FLAGS_debug, FLAGS_port, FLAGS_senderSize, FLAGS_receiverSize, FLAGS_receiverSize, FLAGS_width, 32);
 
   return 0;
 }
