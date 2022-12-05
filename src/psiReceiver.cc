@@ -23,10 +23,12 @@
 #include <random>
 #include <unordered_map>
 #include <utility>
+#include "nlohmann/json.hpp"
 
 #include "psiReceiver.h"
 #include "common.h"
 
+using json = nlohmann::json;
 
 namespace PSI {
 
@@ -36,7 +38,7 @@ psiparams onlineparam = {1024, 1024, 1024, 10, 200, 16, 32, 256, 256};
 // read server params from config file, as csv, json..
 int Parserparam() {
   string config;
-  ifstream config_file("src/config/serverConfig.csv", ios::in);
+  ifstream config_file("config/serverConfig.csv", ios::in);
   if (!config_file.is_open()) {
     std::cout << "open config file fail." << std::endl;
     return 1;
@@ -61,6 +63,39 @@ int Parserparam() {
   } else {
     return 2;  // param size error;
   }
+  return 0;
+}
+
+int ParseJsonparm() {
+  std::ifstream f("config/serverConfig.json");
+  json data = json::parse(f);
+  // Access the values existing in JSON data
+
+/*
+{
+    "senderSize": 1024,
+    "receiverSize": 4096,
+    "height": 4096,
+    "logHeight": 12,
+    "width" : 600,
+    "hashLengthInBytes" :32,
+    "h1LengthInBytes": 32,
+    "bucket1": 256,
+    "bucket2": 256
+}
+*/
+
+  onlineparam.senderSize = data.at("senderSize").get<uint32_t>();
+  onlineparam.receiverSize = data.at("receiverSize").get<uint32_t>();
+  onlineparam.height = data.at("height").get<uint32_t>();
+  onlineparam.logHeight = data.at("logHeight").get<uint32_t>();
+  onlineparam.width = data.at("width").get<uint32_t>();  // int to bool;
+  onlineparam.hashLengthInBytes = data.at("hashLengthInBytes").get<uint32_t>();
+  onlineparam.h1LengthInBytes = data.at("h1LengthInBytes").get<uint32_t>();
+  onlineparam.bucket1 = data.at("bucket1").get<uint32_t>();
+  onlineparam.bucket2 = data.at("bucket2").get<uint32_t>();
+  std::cout << "receiverSize = " <<  data.at("receiverSize").get<int>() << std::endl;
+
   return 0;
 }
 
@@ -117,7 +152,7 @@ int BatchOT(ServerReaderWriter<Point, Point>* stream,
   std::vector<block32> scalarSet;
 
   std::string randASetString = "";
-  for (int i=0; i < width; i++) {  // why not use batch?
+  for (int i = 0; i < width; i++) {  // why not use batch?
     block32 randa;
     GetRandomUint32(8, randa.rand);
     affpoint p;
@@ -376,7 +411,8 @@ int PsiReceive(ServerReaderWriter<Point, Point>* stream,
                  int width = 600,
                  int hashSize = 32
               ) {
-  Parserparam();
+  // Parserparam();
+  ParseJsonparm();
   std::vector<block> serverData;
   // string srcFilePath = "src/data/serverData.csv";
   // int res = InitData(srcFilePath, serverData);
@@ -396,6 +432,8 @@ int PsiReceive(ServerReaderWriter<Point, Point>* stream,
       onlineparam.h1LengthInBytes,
       onlineparam.bucket1,
       onlineparam.bucket2);
+  std::cout << "psiReceiver run end." << std::endl;
+  return 0;
 }
 
 }  // namespace PSI

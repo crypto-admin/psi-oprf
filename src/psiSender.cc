@@ -7,8 +7,11 @@
 #include <vector>
 #include <string>
 #include <random>
+
+#include "nlohmann/json.hpp"
 #include "psiSender.h"
 
+using json = nlohmann::json;
 
 namespace PSI {
 
@@ -45,6 +48,43 @@ int Parserparam(std::string configPath ) {
   }
   return 0;
 }
+
+int ParseJsonparm() {
+  std::ifstream f("config/clientConfig.json");
+  json data = json::parse(f);
+  // std::cout << "dataxx = " << data << std::endl;
+  // Access the values existing in JSON data
+
+/*
+{
+    "senderSize": 1024,
+    "receiverSize": 4096,
+    "height": 4096,
+    "logHeight": 12,
+    "width" : 600,
+    "hashLengthInBytes" :32,
+    "h1LengthInBytes": 32,
+    "bucket1": 256,
+    "bucket2": 256
+
+}
+*/
+
+  onlineparam.senderSize = data.at("senderSize").get<int>();
+  onlineparam.receiverSize = data.at("receiverSize").get<uint32_t>();
+  onlineparam.height = data.at("height").get<uint32_t>();
+  onlineparam.logHeight = data.at("logHeight").get<uint32_t>();
+  onlineparam.width = data.at("width").get<uint32_t>();  // int to bool;
+  onlineparam.hashLengthInBytes = data.at("hashLengthInBytes").get<uint32_t>();
+  onlineparam.h1LengthInBytes = data.at("h1LengthInBytes").get<uint32_t>();
+  onlineparam.bucket1 = data.at("bucket1").get<uint32_t>();
+  onlineparam.bucket2 = data.at("bucket2").get<uint32_t>();
+
+  std::cout << "receiverSize = " <<  data.at("receiverSize").get<int>() << std::endl;
+
+  return 0;
+}
+
 
 int InitData(const std::string filePath, std::vector<std::string>& src) {
   std::string ele;
@@ -282,7 +322,8 @@ void PsiSendRun(
 }
 
 int PsiSend(ClientReaderWriter<Point, Point>* stream) {
-  Parserparam("src/config/clientConfig.csv");
+  // Parserparam("src/config/clientConfig.csv");
+  ParseJsonparm();
   std::vector<block> clientData;
   std::string srcFilePath = "src/data/client.csv";
   // int res = InitData(srcFilePath, clientData);

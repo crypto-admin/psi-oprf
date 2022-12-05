@@ -39,6 +39,7 @@ cc_binary(
         # http_archive made this label available for binding
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_gflags_gflags//:gflags",
+        "@com_github_nlohmann_json//:json",
     ],
 )
 
@@ -57,5 +58,6 @@ cc_binary(
         # http_archive made this label available for binding
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_gflags_gflags//:gflags",
+        "@com_github_nlohmann_json//:json",
     ],
 )

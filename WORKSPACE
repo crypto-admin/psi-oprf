@@ -6,6 +6,11 @@ git_repository(
     remote = "https://github.com/gflags/gflags.git",
 )
 
+git_repository(
+    name = "com_github_nlohmann_json",
+    commit = "8f8315368b74f3ea4f30154dff1242d2f145c705",
+    remote = "https://github.com/nlohmann/json.git",
+)
 ##### Protobuf Rules for Bazel
 ##### See https://github.com/bazelbuild/rules_proto
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")

@@ -72,7 +72,7 @@ class PsiServiceImpl final : public Psi::Service {
     }
 
     int resPsiReceive = PsiReceive(stream, debug, senderSize,receiverSize, height, width, hashSize);
-    std::cout << resPsiReceive << std::endl;
+    std::cout << "grpc end. " << resPsiReceive << std::endl;
     // 20221012确认是内部函数的导致的double free
 
     return Status::OK;

@@ -45,6 +45,7 @@ DEFINE_int32(receiverSize, 1024, "receiver's data size");
 DEFINE_int32(width, 600, "matrix width");
 DEFINE_int32(hashSize, 32, "default hash size");
 
+bool debug = false;
 
 class PsiClient {
  public:
