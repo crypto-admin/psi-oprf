@@ -413,6 +413,7 @@ int PsiReceive(ServerReaderWriter<Point, Point>* stream,
               ) {
   // Parserparam();
   ParseJsonparm();
+  std::cout << "receiverSize " << onlineparam.receiverSize << std::endl;
   std::vector<block> serverData;
   // string srcFilePath = "src/data/serverData.csv";
   // int res = InitData(srcFilePath, serverData);

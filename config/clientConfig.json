@@ -3,8 +3,8 @@
     "receiverSize": 1048576,
     "height": 1048576,
     "logHeight": 20,
-    "width" : 200,
-    "hashLengthInBytes" :32,
+    "width" : 600,
+    "hashLengthInBytes" :16,
     "h1LengthInBytes": 32,
     "bucket1": 256,
     "bucket2": 256
