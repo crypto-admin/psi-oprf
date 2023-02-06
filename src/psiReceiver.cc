@@ -23,6 +23,7 @@
 #include <random>
 #include <unordered_map>
 #include <utility>
+#include <ctime>
 #include "nlohmann/json.hpp"
 
 #include "psiReceiver.h"
@@ -422,6 +423,10 @@ int PsiReceive(ServerReaderWriter<Point, Point>* stream,
   // for (int i = 0; i < 102; i++) PrintBlock(serverData[i]);
 
   PsiReceiver r;
+  clock_t start, end;
+
+  start = clock();
+
   r.run(stream, \
       onlineparam.senderSize,
       onlineparam.receiverSize,
@@ -433,7 +438,12 @@ int PsiReceive(ServerReaderWriter<Point, Point>* stream,
       onlineparam.h1LengthInBytes,
       onlineparam.bucket1,
       onlineparam.bucket2);
-  std::cout << "psiReceiver run end." << std::endl;
+  
+  end = clock();
+  double endtime=(double)(end-start)/CLOCKS_PER_SEC;
+
+  std::cout << "psiReceiver run end, spend time = " << endtime << std::endl;
+  
   return 0;
 }
 
