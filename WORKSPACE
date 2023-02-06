@@ -35,9 +35,9 @@ rules_proto_toolchains()
 http_archive(
     name = "com_github_grpc_grpc",
     urls = [
-        "https://github.com/grpc/grpc/archive/de893acb6aef88484a427e64b96727e4926fdcfd.tar.gz",
+        "https://github.com/grpc/grpc/archive/a3f10052090539cd3e19aa8e04f3bf8eceae2964.tar.gz",
     ],
-    strip_prefix = "grpc-de893acb6aef88484a427e64b96727e4926fdcfd",
+    strip_prefix = "grpc-a3f10052090539cd3e19aa8e04f3bf8eceae2964",
 )
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 grpc_deps()
