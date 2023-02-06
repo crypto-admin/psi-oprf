@@ -61,7 +61,7 @@ class PsiClient {
     ClientContext context;
 
     gpr_timespec timespec;
-    timespec.tv_sec = 100;
+    timespec.tv_sec = 1000;
     timespec.tv_nsec = 0;
     timespec.clock_type=GPR_TIMESPAN;
 

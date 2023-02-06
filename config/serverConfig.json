@@ -4,7 +4,7 @@
     "height": 1048576,
     "logHeight": 20,
     "width" : 600,
-    "hashLengthInBytes" :16,
+    "hashLengthInBytes" :10,
     "h1LengthInBytes": 32,
     "bucket1": 256,
     "bucket2": 256
