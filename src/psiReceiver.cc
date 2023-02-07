@@ -195,20 +195,26 @@ void PsiReceiver::run(
       const ui32& h1LengthInBytes,
       const ui32& bucket1,
       const ui32& bucket2) {
-    clock_t start;
+    clock_t start, end;
     auto heightInBytes = (height + 7) / 8;
     auto widthInBytes = (width + 7) / 8;
     auto locationInBytes = (logHeight + 7) / 8;
     auto receiverSizeInBytes = (receiverSize + 7) / 8;
     auto shift = (1 << logHeight) - 1;
     auto widthBucket1 = sizeof(block) / locationInBytes;  // 16/3 = 5
+    std::cout << "widthBucket1 = " << widthBucket1 << std::endl;
 
     ///////////////////// Base OTs ///////////////////////////
+    start = clock();
     std::vector<affpoint> k0;
     std::vector<affpoint> k1;
     BatchOT(stream, width, k0, k1);
+    end = clock();
+    std::cout << "BatchOT spent time: " << (double)(end-start)/CLOCKS_PER_SEC << std::endl;
+
 
     /****** PSI batch compute Matrix A/B ******/
+    start = clock();
     u8* matrixA[widthBucket1];  // 每次处理5列
     u8* matrixDelta[widthBucket1];
     for (auto i = 0; i < widthBucket1; ++i) {
@@ -257,28 +263,32 @@ void PsiReceiver::run(
         recvSet[i].msg[loop] ^= aesOutput[i].msg[loop];
       }
     }
-    //
-    std::cout << "Receiver set transstformed" << std::endl;
+    end = clock();
+    std::cout << "Receiver set transstformed, spend time = " << (end-start)/CLOCKS_PER_SEC << std::endl;
 
     for (auto wLeft = 0; wLeft < width; wLeft += widthBucket1) {
       auto wRight = wLeft + widthBucket1 < width ? wLeft + widthBucket1 : width;
       auto w = wRight - wLeft;
-
+      start = clock();
       //////////// Compute random locations (transposed) ////////////////
       for (auto low = 0; low < receiverSize; low += bucket1) {
         auto up = low + bucket1 < receiverSize ? low + bucket1 : receiverSize;
-
+        
+        start = clock();
         Sm4EncBlock(recvSet + low, up - low, randomLocations, aesKey);
 
+        
         for (auto i = 0; i < w; ++i) {
           for (auto j = low; j < up; ++j) {
             memcpy(transLocations[i] + j * locationInBytes, (u8*)(randomLocations + (j - low)) + i * locationInBytes, locationInBytes);
           }
         }
+        end = clock();
+        std::cout << "memcpy time  =" << (double)(end-start)/CLOCKS_PER_SEC << std::endl;
       }
 
       //////////// Compute matrix Delta /////////////////////////////////
-
+      
       for (auto i = 0; i < widthBucket1; ++i) {
         memset(matrixDelta[i], 255, heightInBytes);
       }
@@ -291,9 +301,9 @@ void PsiReceiver::run(
       }
 
       //////////////// Compute matrix A & sent matrix ///////////////////////
-
       u8* sentMatrix[w];
-
+       
+      
       for (auto i = 0; i < w; ++i) {
         // PRNG prng(otMessages[i + wLeft][0]);
         // prng.get(matrixA[i], heightInBytes);
@@ -329,15 +339,17 @@ void PsiReceiver::run(
           transHashInputs[i + wLeft][j >> 3] |= (u8)(bool)temp << (j & 7);
         }
       }
+      end = clock();
+      std::cout << "Compute hash input, spend time = " << (double)(end-start)/CLOCKS_PER_SEC << std::endl;
     }
 
-    std::cout << "Receiver matrix sent and transposed hash input computed" << std::endl;
 
 		/////////////////// Compute hash outputs ///////////////////////////
     // RandomOracle H(hashLengthInBytes);
     u8 hashOutput[sizeof(block)] = {0};
     // u8 hashOutput[hashLengthInBytes];
     std::unordered_map<uint64_t, std::vector<std::pair<block, ui32>>> allHashes;
+    start = clock();
 
     u8* hashInputs[bucket2];
     for (auto i = 0; i < bucket2; ++i) {
@@ -362,12 +374,13 @@ void PsiReceiver::run(
         allHashes[*(uint64_t*)(hashOutput)].push_back(std::make_pair(*(block*)hashOutput, j));
       }
     }
-
-    std::cout << "Receiver hash outputs computed\n";
+    end = clock();
+    std::cout << "Receiver hash outputs computed, spend time = " << (double)(end-start)/CLOCKS_PER_SEC << std::endl;
 
     ///////////////// Receive hash outputs from sender and compute PSI ///////////////////
     u8* recvBuff = new u8[bucket2 * hashLengthInBytes];
     auto psi = 0;
+    start = clock();
 		
     for (auto low = 0; low < senderSize; low += bucket2) {
       auto up = low + bucket2 < senderSize ? low + bucket2 : senderSize;
@@ -393,6 +406,9 @@ void PsiReceiver::run(
         }
       }
     }
+    
+    end = clock();
+    std::cout << "psi output computed, spend time = " << (end-start)/CLOCKS_PER_SEC << std::endl;
 
     if (psi == 100) {
       std::cout << "Receiver intersection computed - correct!\n";
