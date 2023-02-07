@@ -119,11 +119,18 @@ affpoint PointNeg(affpoint src) {
 
 int Sm4EncBlock(block* src, int length, block* dst, unsigned char key[16]) {
     // length is block num
-  sm4_context ctx;
-  sm4_setkey_enc(&ctx, key);
+  // sm4_context ctx;
+  // sm4_setkey_enc(&ctx, key);
+  // for (int blockNum = 0; blockNum < length; blockNum++) {
+  //   sm4_crypt_ecb(&ctx, 16, src[blockNum].msg, dst[blockNum].msg);
+  // }
+  // 230307 update to AES
+  AES_KEY keyAes;
+  AES_set_encrypt_key(key, 128, &keyAes);
   for (int blockNum = 0; blockNum < length; blockNum++) {
-    sm4_crypt_ecb(&ctx, 16, src[blockNum].msg, dst[blockNum].msg);
+     AES_encrypt(src[blockNum].msg, dst[blockNum].msg, &keyAes);
   }
+
   return 0;
 }
 

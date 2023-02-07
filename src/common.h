@@ -23,6 +23,7 @@
 #include <iomanip>
 #include "crypto/sm2.h"
 #include "crypto/sm4.h"
+#include "crypto/aes.h"
 #include "crypto/sm3_hash.h"
 #include "src/proto/ot.grpc.pb.h"
 

@@ -274,17 +274,13 @@ void PsiReceiver::run(
       for (auto low = 0; low < receiverSize; low += bucket1) {
         auto up = low + bucket1 < receiverSize ? low + bucket1 : receiverSize;
         
-        start = clock();
         Sm4EncBlock(recvSet + low, up - low, randomLocations, aesKey);
-
         
         for (auto i = 0; i < w; ++i) {
           for (auto j = low; j < up; ++j) {
             memcpy(transLocations[i] + j * locationInBytes, (u8*)(randomLocations + (j - low)) + i * locationInBytes, locationInBytes);
           }
         }
-        end = clock();
-        std::cout << "memcpy time  =" << (double)(end-start)/CLOCKS_PER_SEC << std::endl;
       }
 
       //////////// Compute matrix Delta /////////////////////////////////

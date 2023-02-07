@@ -62,3 +62,9 @@ PSI-OPRF Source Code
     ./psiServer --senderSize=1024, --receiverSize=1024, --width=20, --port=50051
     ./psiClient --senderSize=1024, --receiverSize=1024, --width=20, --port=50051, --ip=127.0.0.1
 ```
+##### Update
+```
+  20230206跑通了大数据100W的正确性，问题在于grpc超时，将timeout设置为1000s后解决；
+  20230207提升新能，使用了AES的大表实现，如果用AESNI/SM4NI应该会更快；
+  目前的性能比libOTE版本慢5倍，还有太多优化空间;
+```

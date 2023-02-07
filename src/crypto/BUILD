@@ -16,6 +16,8 @@ cc_library(
         "sm3.h",
         "sm4.cpp",
         "sm4.h",
+        "aes.h",
+        "aes.cpp",
         "stringutil.cpp",
         "stringutil.h",
     ],
