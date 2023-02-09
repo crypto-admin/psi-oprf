@@ -3,7 +3,7 @@ package(default_visibility = ["//visibility:public"])
 
 PIR_DEFAULT_INCLUDES = ["."]
 
-PIR_DEFAULT_COPTS = ["-std=c++17"]
+PIR_DEFAULT_COPTS = ["-std=c++14", "-Ofast", "-maes",  "-msse4.2",  "-mavx"]
 
 cc_library(
     name = "ecc",
@@ -20,6 +20,8 @@ cc_library(
         "aes.cpp",
         "stringutil.cpp",
         "stringutil.h",
+        "intel_impl.cpp",
+        "intel_impl.h",
     ],
     hdrs = [
     ],

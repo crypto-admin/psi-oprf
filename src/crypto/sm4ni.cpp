@@ -174,3 +174,4 @@ void sm4_encrypt4(const uint32_t rk[32], void *src, const void *dst)
     p32[15] = v[3];
 }
 
+
