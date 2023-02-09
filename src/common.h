@@ -25,6 +25,7 @@
 #include "crypto/sm4.h"
 #include "crypto/aes.h"
 #include "crypto/sm3_hash.h"
+#include "crypto/intel_impl.h"
 #include "src/proto/ot.grpc.pb.h"
 
 using ot::Point;
