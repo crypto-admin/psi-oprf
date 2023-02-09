@@ -271,6 +271,7 @@ void PsiSendRun(
       }
     }
     ///////////////// Compute hash inputs (transposed) /////////////////////
+    #pragma omp parallell for
     for (auto i = 0; i < w; ++i) {
       for (auto j = 0; j < senderSize; ++j) {  // H2 input == transHashInputs
         auto location = (*(ui32*)(transLocations[i] + j * locationInBytes)) & shift;

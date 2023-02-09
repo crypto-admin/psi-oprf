@@ -249,8 +249,10 @@ void PsiReceiver::run(
 
     u8 h1Output[h1LengthInBytes];
 
+    #pragma omp parallell for
     for (auto i = 0; i < receiverSize; ++i) {
-      // SM3_Hash((u8*)(receiverSet.data() + i), sizeof(block), h1Output, 32); 
+      // SM3_Hash((u8*)(receiverSet.data() + i), sizeof(block), h1Output, 32);
+      // 20230209 update to Blake3
       Blake3_Hash((u8*)(receiverSet.data() + i), sizeof(block), h1Output);
       // 32 is sm3 out len;
       aesInput[i] = *(block*)h1Output;
@@ -265,12 +267,13 @@ void PsiReceiver::run(
       }
     }
     end = clock();
-    std::cout << "Receiver set transstformed, spend time = " << (end-start)/CLOCKS_PER_SEC << std::endl;
+    std::cout << "Receiver set transstformed, spend time = " << (double)(end-start)/CLOCKS_PER_SEC << std::endl;
 
+    start = clock(); // big loop time
     for (auto wLeft = 0; wLeft < width; wLeft += widthBucket1) {
       auto wRight = wLeft + widthBucket1 < width ? wLeft + widthBucket1 : width;
       auto w = wRight - wLeft;
-      start = clock();
+      // start = clock();
       //////////// Compute random locations (transposed) ////////////////
       for (auto low = 0; low < receiverSize; low += bucket1) {
         auto up = low + bucket1 < receiverSize ? low + bucket1 : receiverSize;
@@ -289,7 +292,8 @@ void PsiReceiver::run(
       for (auto i = 0; i < widthBucket1; ++i) {
         memset(matrixDelta[i], 255, heightInBytes);
       }
-
+      
+      #pragma omp parallell for
       for (auto i = 0; i < w; ++i) {
         for (auto j = 0; j < receiverSize; ++j) {
           auto location = (*(ui32*)(transLocations[i] + j * locationInBytes)) & shift;
@@ -299,8 +303,6 @@ void PsiReceiver::run(
 
       //////////////// Compute matrix A & sent matrix ///////////////////////
       u8* sentMatrix[w];
-       
-      
       for (auto i = 0; i < w; ++i) {
         // PRNG prng(otMessages[i + wLeft][0]);
         // prng.get(matrixA[i], heightInBytes);
@@ -329,6 +331,7 @@ void PsiReceiver::run(
       }
 
       ///////////////// Compute hash inputs (transposed) /////////////////////
+      #pragma omp parallell for
       for (auto i = 0; i < w; ++i) {
         for (auto j = 0; j < receiverSize; ++j) {
           auto location = (*(ui32*)(transLocations[i] + j * locationInBytes)) & shift;
@@ -336,10 +339,12 @@ void PsiReceiver::run(
           transHashInputs[i + wLeft][j >> 3] |= (u8)(bool)temp << (j & 7);
         }
       }
-      end = clock();
-      std::cout << "Compute hash input, spend time = " << (double)(end-start)/CLOCKS_PER_SEC << std::endl;
+      // end = clock(); // line273
+      // std::cout << "Compute hash input, spend time = " << (double)(end-start)/CLOCKS_PER_SEC << std::endl;
     }
 
+    end = clock();
+    std::cout << "big loop, spend time = " << (double)(end-start)/CLOCKS_PER_SEC << std::endl;
 
 		/////////////////// Compute hash outputs ///////////////////////////
     // RandomOracle H(hashLengthInBytes);
@@ -406,7 +411,7 @@ void PsiReceiver::run(
     }
     
     end = clock();
-    std::cout << "psi output computed, spend time = " << (end-start)/CLOCKS_PER_SEC << std::endl;
+    std::cout << "psi output computed, spend time = " << (double)(end-start)/CLOCKS_PER_SEC << std::endl;
 
     if (psi == 100) {
       std::cout << "Receiver intersection computed - correct!\n";
