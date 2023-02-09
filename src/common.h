@@ -75,4 +75,7 @@ int MockData(std::vector<block>* src, int dataSize);
 std::string Char2hexstring(char* str, int n);
 int Hexstring2char(const std::string& str, char* out);
 
+int Blake3_Hash(uint8_t* in, uint32_t length, uint8_t* hashOut);
+
+
 }  // namespace PSI

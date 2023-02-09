@@ -23,6 +23,8 @@ cc_library(
         "intel_impl.cpp",
         "intel_impl.h",
         "blake3.cpp",
+        "blake3_dispatch.cpp",
+        "blake3_portable.cpp",
         "blake3.h",
         "blake3_impl.h"
     ],

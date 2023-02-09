@@ -143,6 +143,20 @@ int Sm4EncBlock(block* src, int length, block* dst, unsigned char key[16]) {
   return 0;
 }
 
+
+int Blake3_Hash(uint8_t* in, uint32_t length, uint8_t* hashOut) {
+    // Initialize the hasher.
+  blake3_hasher hasher;
+  blake3_hasher_init(&hasher);
+  blake3_hasher_update(&hasher, in, length);
+
+
+  // Finalize the hash. BLAKE3_OUT_LEN is the default output length, 32 bytes.
+  // uint8_t output[BLAKE3_OUT_LEN];
+  blake3_hasher_finalize(&hasher, hashOut, BLAKE3_OUT_LEN);
+  return 0;
+}
+
 int Prf(unsigned char *seed, int length, unsigned char *dst) {
     // 使用SM3， 将seed扩展为length长度;
     int blockNum = length / 32;  // 32 is sm3 out len;
