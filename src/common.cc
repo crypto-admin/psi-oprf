@@ -214,7 +214,7 @@ int MockData(std::vector<block>* src, int dataSize) {
   }
 
   for (int i = 100; i < dataSize; i++) {
-    GetRandom(16, hashSrc);
+    GetRandom(32, hashSrc);
     SM3_Hash(hashSrc, 16, hashDst, 16);
     block temp;
     memcpy(temp.msg, hashDst, 16);
