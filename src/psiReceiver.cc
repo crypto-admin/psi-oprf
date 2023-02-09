@@ -250,7 +250,8 @@ void PsiReceiver::run(
     u8 h1Output[h1LengthInBytes];
 
     for (auto i = 0; i < receiverSize; ++i) {
-      SM3_Hash((u8*)(receiverSet.data() + i), sizeof(block), h1Output, 32); 
+      // SM3_Hash((u8*)(receiverSet.data() + i), sizeof(block), h1Output, 32); 
+      Blake3_Hash((u8*)(receiverSet.data() + i), sizeof(block), h1Output);
       // 32 is sm3 out len;
       aesInput[i] = *(block*)h1Output;
       recvSet[i] = *(block*)(h1Output + sizeof(block));
@@ -366,7 +367,8 @@ void PsiReceiver::run(
       }
 
       for (auto j = low; j < up; ++j) {
-        SM3_Hash(hashInputs[j - low], widthInBytes, hashOutput, sizeof(block));
+        // SM3_Hash(hashInputs[j - low], widthInBytes, hashOutput, sizeof(block));
+        Blake3_Hash(hashInputs[j - low], widthInBytes, hashOutput);
         allHashes[*(uint64_t*)(hashOutput)].push_back(std::make_pair(*(block*)hashOutput, j));
       }
     }

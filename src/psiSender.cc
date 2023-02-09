@@ -210,8 +210,8 @@ void PsiSendRun(
   // RandomOracle H1(h1LengthInBytes);  // 32, 256bit
   u8 h1Output[h1LengthInBytes];
   for (auto i = 0; i < senderSize; ++i) {
-    SM3_Hash((u8*)(senderSet.data() + i), sizeof(block), h1Output, 32);
-
+    // SM3_Hash((u8*)(senderSet.data() + i), sizeof(block), h1Output, 32);
+    Blake3_Hash((u8*)(senderSet.data() + i), sizeof(block), h1Output);
     aesInput[i] = *(block*)h1Output; // 做了截断, 前16字节；
     // PrintBlock(aesInput[i]);
     sendSet[i] = *(block*)(h1Output + sizeof(block));  // 后16字节;
@@ -282,7 +282,8 @@ void PsiSendRun(
   std::cout << "Sender transposed hash input computed\n";
 
   /////////////////// Compute hash outputs ///////////////////////////
-  u8 hashOutput[sizeof(block)]; // think
+  // u8 hashOutput[sizeof(block)]; // think
+  u8 hashOutput[sizeof(block)*2]; // think
   // u8 hashOutput[hashLengthInBytes];
   u8* hashInputs[bucket2];
 
@@ -306,7 +307,8 @@ void PsiSendRun(
     u8* sentBuff = new u8[(up - low) * hashLengthInBytes];
 
     for (auto j = low; j < up; ++j) {
-      SM3_Hash(hashInputs[j-low], widthInBytes, hashOutput, sizeof(block));
+      // SM3_Hash(hashInputs[j-low], widthInBytes, hashOutput, sizeof(block));
+      Blake3_Hash(hashInputs[j-low], widthInBytes, hashOutput);
       memcpy(sentBuff + (j - low) * hashLengthInBytes, hashOutput, hashLengthInBytes);
     }
     Point hashSendPoint;

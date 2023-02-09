@@ -167,11 +167,13 @@ int Prf(unsigned char *seed, int length, unsigned char *dst) {
     memcpy(hashIn, seed, 32);
 
     for (int i = 0; i < blockNum; ++i) {
-        SM3_Hash(hashIn, 32, hashOut, 32);
+        // SM3_Hash(hashIn, 32, hashOut, 32);
+        Blake3_Hash(hashIn, 32, hashOut);
         memcpy(dst+i*32, hashOut, 32);
         memcpy(hashIn, hashOut, 32);
     }
-    SM3_Hash(hashIn, 32, hashOut, 32);
+    // SM3_Hash(hashIn, 32, hashOut, 32);
+    Blake3_Hash(hashIn, 32, hashOut);
     if (left) memcpy(dst + 32*blockNum, hashOut, left);
 
     return 0;
