@@ -140,9 +140,6 @@ int Sm4EncBlock(block* src, int length, block* dst, unsigned char key[16]) {
     AES_ECB_encrypt(src[blockNum].msg, dst[blockNum].msg, expandedKeys);
   }
 
-
-
-
   return 0;
 }
 

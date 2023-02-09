@@ -22,6 +22,9 @@ cc_library(
         "stringutil.h",
         "intel_impl.cpp",
         "intel_impl.h",
+        "blake3.cpp",
+        "blake3.h",
+        "blake3_impl.h"
     ],
     hdrs = [
     ],
