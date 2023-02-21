@@ -18,6 +18,7 @@
 #include <random>
 #include <string>
 #include <sstream>
+#include <thread>
 #include "common.h"
 
 using namespace std;
@@ -141,6 +142,33 @@ int Sm4EncBlock(block* src, int length, block* dst, unsigned char key[16]) {
   }
 
   return 0;
+}
+
+int Sm4EncBlockWithExpandKey(block* src, int length, block* dst, uint8_t expandedKeys[176]) {
+
+  for (int blockNum = 0; blockNum < length; blockNum++) {
+    AES_ECB_encrypt(src[blockNum].msg, dst[blockNum].msg, expandedKeys);
+  }
+  return 0;
+}
+
+int Sm4EncBlockWithExpandKeyUp(block* src, int length, block* dst, uint8_t expandedKeys[176]) {
+
+  if (length > 200 && length % 4 == 0) {
+
+    thread t1(Sm4EncBlockWithExpandKey, src, length/4, dst, expandedKeys);
+    thread t2(Sm4EncBlockWithExpandKey, src+length/4, length/4, dst+length/4, expandedKeys);
+    thread t3(Sm4EncBlockWithExpandKey, src+length/2, length/4, dst+length/2, expandedKeys);
+    thread t4(Sm4EncBlockWithExpandKey, src+3*length/4, length/4, dst+3*length/4, expandedKeys);
+    t1.join();
+    t2.join();
+    t3.join();
+    t4.join();
+    
+  } else {
+    Sm4EncBlockWithExpandKey(src, length, dst, expandedKeys);
+  }
+
 }
 
 

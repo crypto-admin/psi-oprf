@@ -269,7 +269,11 @@ void PsiReceiver::run(
     end = clock();
     std::cout << "Receiver set transstformed, spend time = " << (double)(end-start)/CLOCKS_PER_SEC << std::endl;
 
+
     start = clock(); // big loop time
+    // create a store for the keys
+    uint8_t expandedKeys[176];
+    AES_128_Key_Expansion(aesKey, expandedKeys);
     for (auto wLeft = 0; wLeft < width; wLeft += widthBucket1) {
       auto wRight = wLeft + widthBucket1 < width ? wLeft + widthBucket1 : width;
       auto w = wRight - wLeft;
@@ -278,7 +282,7 @@ void PsiReceiver::run(
       for (auto low = 0; low < receiverSize; low += bucket1) {
         auto up = low + bucket1 < receiverSize ? low + bucket1 : receiverSize;
         
-        Sm4EncBlock(recvSet + low, up - low, randomLocations, aesKey);
+        Sm4EncBlockWithExpandKeyUp(recvSet + low, up - low, randomLocations, expandedKeys);
         
         for (auto i = 0; i < w; ++i) {
           for (auto j = low; j < up; ++j) {
@@ -303,14 +307,14 @@ void PsiReceiver::run(
 
       //////////////// Compute matrix A & sent matrix ///////////////////////
       u8* sentMatrix[w];
+      unsigned char* seed = new unsigned char[32];
+      unsigned char* r0Extend = new unsigned char[heightInBytes];
+      unsigned char* r1Extend = new unsigned char[heightInBytes];
       for (auto i = 0; i < w; ++i) {
         // PRNG prng(otMessages[i + wLeft][0]);
         // prng.get(matrixA[i], heightInBytes);
         auto k0point = k0[i+wLeft];  // affpoint
         auto k1point = k1[i+wLeft];  // affpoint
-        unsigned char* seed = new unsigned char[32];
-        unsigned char* r0Extend = new unsigned char[heightInBytes];
-        unsigned char* r1Extend = new unsigned char[heightInBytes];
         Small8toChar(k0point.x, seed);
         Prf(seed, heightInBytes, r0Extend);
         Small8toChar(k1point.x, seed);

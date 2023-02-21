@@ -226,6 +226,10 @@ void PsiSendRun(
   }
 
   std::cout << "Sender set transformed." << std::endl;
+
+  // create a store for the keys
+  uint8_t expandedKeys[176];
+  AES_128_Key_Expansion(aesKey, expandedKeys);
   for (int wLeft = 0; wLeft < width; wLeft += widthBucket1) {
     auto wRight = wLeft + widthBucket1 < width ? wLeft + widthBucket1 : width;
     int w = wRight - wLeft;  // mostly == withBucket1
@@ -234,7 +238,8 @@ void PsiSendRun(
       auto up = low + bucket1 < senderSize ? low + bucket1 : senderSize;
       // 每次处理256行; 如果一次处理sendersize行，太大了，赋值时间耗时长
       // commonAes.ecbEncBlocks(sendSet + low, up - low, randomLocations);
-      Sm4EncBlock(sendSet + low, up - low, randomLocations, aesKey);
+      // Sm4EncBlock(sendSet + low, up - low, randomLocations, aesKey);
+      Sm4EncBlockWithExpandKeyUp(sendSet + low, up - low, randomLocations, expandedKeys);
       // randomLocations is output;
       for (auto i = 0; i < w; ++i) {
         for (auto j = low; j < up; ++j) {

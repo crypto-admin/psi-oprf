@@ -68,6 +68,8 @@ int Point2AffinePoint(Point src, affpoint* dst);
 int AffinePoint2String(const affpoint& point, std::string* dst);
 affpoint PointNeg(affpoint src);
 int Sm4EncBlock(block* src, int length, block* dst, unsigned char key[16]);
+int Sm4EncBlockWithExpandKey(block* src, int length, block* dst, uint8_t expandedKeys[176]);
+int Sm4EncBlockWithExpandKeyUp(block* src, int length, block* dst, uint8_t expandedKeys[176]);
 int Prf(unsigned char *seed, int length, unsigned char *dst);
 int Small8toChar(small src[DIG_LEN], unsigned char *dst);
 int PrintBlock(block src);
